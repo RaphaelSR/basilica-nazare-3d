@@ -190,7 +190,7 @@ footer {
   margin: 0 3vw;
   border-top: 1px solid var(--line);
   display: grid;
-  grid-template-columns: 34px 1fr 105px;
+  grid-template-columns: 34px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 14px;
   position: relative;
