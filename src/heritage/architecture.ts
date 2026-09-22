@@ -203,6 +203,15 @@ function balustrade(b:HeritageBuilder,w:Wall,y:number,start:number,h=.9){
   b.box([w.len+.3,.15,.34],w.at(w.len/2,y+h),"marble",start+.01,{r:w.rot(),shade:1.02});
   for(let s=.3;s<w.len-.2;s+=.42)b.cylinder(.06,.09,h-.2,w.at(s,y+h/2-.03),"marble",start+.004,{shade:.95});
 }
+function latticeParapet(b:HeritageBuilder,w:Wall,y:number,start:number){
+  const h=.9,step=.48,diagonal=Math.hypot(step,h-.23),tilt=Math.atan2(h-.23,step);
+  b.box([w.len+.3,.12,.3],w.at(w.len/2,y+.06),"marble",start,{r:w.rot(),shade:.96});
+  b.box([w.len+.3,.15,.34],w.at(w.len/2,y+h),"marble",start+.01,{r:w.rot(),shade:1.02});
+  for(let s=.14;s+step<w.len-.1;s+=step){
+    const center=w.at(s+step/2,y+h/2,.06);
+    for(const direction of[-1,1])b.box([diagonal,.055,.08],center,"marble",start+.006,{r:w.rot(direction*tilt),shade:.98});
+  }
+}
 function angel(b:HeritageBuilder,p:Point,yaw:number,start:number,scale=1,wings=true){
   const P=(x:number,y:number,z:number):Point=>{const q=facePoint(x*scale,y*scale,z*scale,yaw);return[p[0]+q[0],p[1]+q[1],p[2]+q[2]];};
   const pose={p,r:[0,yaw,0] as Point,s:[scale,scale,scale] as Point,lift:.18};
@@ -235,7 +244,7 @@ function angel(b:HeritageBuilder,p:Point,yaw:number,start:number,scale=1,wings=t
   }
 }
 
-// Roman capitals built as shallow solid strokes, sharing the existing gold batch.
+// Roman capitals built as shallow solid strokes.
 const LETTERS:Record<string,number[][]>={
   A:[[0,0,.3,1,.6,0],[.13,.4,.47,.4]], D:[[0,0,0,1,.3,1,.55,.82,.6,.5,.55,.18,.3,0,0,0]],
   C:[[.6,.82,.45,1,.17,1,0,.78,0,.22,.17,0,.45,0,.6,.18]],
@@ -248,7 +257,7 @@ const LETTERS:Record<string,number[][]>={
   S:[[.59,.85,.44,1,.16,1,0,.83,0,.66,.15,.54,.46,.45,.6,.3,.6,.17,.44,0,.15,0,0,.15]],
   T:[[0,1,.6,1],[.3,1,.3,0]], V:[[0,1,.3,0,.6,1]], Z:[[0,1,.6,1,0,0,.6,0]],
 };
-function inscription(b:HeritageBuilder,w:Wall,text:string,y:number,width:number,height:number,out:number,start:number){
+function inscription(b:HeritageBuilder,w:Wall,text:string,y:number,width:number,height:number,out:number,start:number,material:SurfaceName="gold"){
   const advance=.83,total=text.length*advance-.23,unit=width/total;
   for(let i=0;i<text.length;i++){
     const letter=text[i];if(letter===' ')continue;
@@ -264,7 +273,7 @@ function inscription(b:HeritageBuilder,w:Wall,text:string,y:number,width:number,
       }
       return new THREE.ExtrudeGeometry(shapes,{depth:.07,bevelEnabled:false,steps:1,curveSegments:1});
     });
-    b.add(g,"gold",start+i*.00008,{p:w.at(w.len/2+(i*advance-total/2)*unit,y-height/2,out),r:w.rot(),s:[unit,height,height],lift:.1});
+    b.add(g,material,start+i*.00008,{p:w.at(w.len/2+(i*advance-total/2)*unit,y-height/2,out),r:w.rot(),s:[unit,height,height],lift:.1});
   }
 }
 function panelFrame(b:HeritageBuilder,w:Wall,s:number,y:number,width:number,height:number,start:number){
@@ -275,12 +284,20 @@ function panelFrame(b:HeritageBuilder,w:Wall,s:number,y:number,width:number,heig
 }
 function tympanum(b:HeritageBuilder,w:Wall){
   const start=.915,base=PED_BASE+.13;
-  // Shallow tesserae sit directly on the masonry; the relief grows from the same bed.
-  for(let row=0;row<9;row++){
-    const y=base+row*.25,hw=pedimentHalfWidth(y+.13)-.4;
-    for(let x=-hw+.12;x<hw-.08;x+=.26){
-      const tone=.92+.075*Math.sin(x*.9+y*.7)+variation(row*41+x)*.035;
-      b.box([.244,.225,.026],w.at(FRONT_S(x),y,.16),"gold",start+row*.001,{shade:tone,lift:.1});
+  // A restrained coloured tessera field gives the triangular tympanum its painted character.
+  const sky=["#d9a03c","#eac45c","#f2d780","#c88836"],water=["#286982","#357d8d","#4b97a4","#385e70"];
+  const foliage=["#426a48","#6c814c","#8f8e53","#a9794b"],robes=["#923f3d","#315778","#7d5b80","#b77b4d"];
+  for(let row=0;row<17;row++){
+    const y=base+.07+row*.135,t=(y-base)/(PED_APEX-base),hw=pedimentHalfWidth(y+.07)-.3;
+    for(let x=-hw+.08;x<hw-.06;x+=.14){
+      const pick=Math.floor(variation(row*71+Math.round(x*100))*4);
+      let colour=t<.3?water[pick]:sky[pick];
+      if(Math.abs(x)>2.5&&t<.53)colour=foliage[pick];
+      for(const [index,cx]of[-3,-1.7,1.7,3].entries())if(Math.abs(x-cx)<.28&&t<.53)colour=robes[(index+pick)%4];
+      if(Math.abs(x)<.4&&t>.2&&t<.75)colour=pick%3===0?"#c8d7d0":"#237ba1";
+      if(Math.abs(x)<.2&&t>.67&&t<.82)colour="#efdfb1";
+      const tint=new THREE.Color(colour);
+      b.box([.132,.126,.026],w.at(FRONT_S(x),y,.185),"mosaic",start+row*.0007,{tint:[tint.r,tint.g,tint.b],lift:.1});
     }
   }
   const cy=18.38;
@@ -475,14 +492,20 @@ function outerWalls(b:HeritageBuilder){
     courses(b,faceF,{y0:AISLE_TOP,y1:WALL_TOP,material:()=>"marble",start:T.mason});
     cornice(b,[faceF],WALL_TOP,.385);
     strip(b,new Wall(w.at(sOf(TRANSEPT_Z0),0),w.at(sOf(TRANSEPT_Z1),0)),WALL_TOP+.36,.6,.25,.7,"marble",.386,1.0);
-    // Flat aisle roofs: slab, pierced parapet on the outer edge, skylights.
-    for(const [z0,z1]of[[16.8,TRANSEPT_Z0]] as [number,number][]){
-      const len=z0-z1,zc=(z0+z1)/2;
-      b.box([AISLE_X-CLER_X+.4,.35,len],[sign*(AISLE_X+CLER_X)/2,AISLE_TOP+.72+.17,zc],"stone",.30,{duration:.02,lift:.6,shade:1.05});
-      const edge=sign>0?new Wall([AISLE_X+.1,0,z0],[AISLE_X+.1,0,z1]):new Wall([-AISLE_X-.1,0,z1],[-AISLE_X-.1,0,z0]);
-      balustrade(b,edge,AISLE_TOP+.72+.34,.33,.8);
-      for(let z=z1+1.5;z<z0-1;z+=4)b.box([1,.35,1],[sign*(AISLE_X+CLER_X)/2,AISLE_TOP+.72+.5,z],"glass",.34);
+    // The aisle roof rises from the outer cornice to the clerestory on both sides.
+    const z0=16.8,z1=TRANSEPT_Z0,len=z0-z1,zc=(z0+z1)/2;
+    const eaveX=AISLE_X+.25,innerX=CLER_X+.08,eaveY=AISLE_TOP+.48,innerY=AISLE_TOP+1.92;
+    const span=eaveX-innerX,rise=innerY-eaveY,rake=Math.atan2(rise,span),rakeLen=Math.hypot(span,rise);
+    b.box([span+.25,.22,len],[sign*(eaveX+innerX)/2,AISLE_TOP+.14,zc],"stone",.30,{duration:.02,lift:.5,shade:.95});
+    for(let z=z1+.8;z<z0;z+=3.8)b.box([rakeLen,.2,.2],[sign*(eaveX+innerX)/2,(eaveY+innerY)/2-.17,z],"wood",.315,{r:[0,0,-sign*rake],duration:.02,lift:.8});
+    for(const t of[.22,.64])b.box([.18,.19,len-.3],[sign*(eaveX-span*t),eaveY+rise*t-.16,zc],"wood",.332,{duration:.015,lift:.5});
+    if(sign>0)tiledSlope(b,[eaveX,eaveY,z1],[eaveX,eaveY,z0],[-span,rise,0],.345);
+    else tiledSlope(b,[-eaveX,eaveY,z0],[-eaveX,eaveY,z1],[span,rise,0],.345);
+    for(let row=1;row<10;row++){
+      const t=row*.6/rakeLen;
+      b.box([.075,.045,len-.1],[sign*(eaveX-span*t),eaveY+rise*t+.11,zc],"tile",.355+row*.0045,{shade:.82+variation(row*17+(sign+1)*5)*.08,lift:.2});
     }
+    b.box([rakeLen,.19,.24],[sign*(eaveX+innerX)/2,(eaveY+innerY)/2-.04,z0+.1],"wood",.35,{r:[0,0,-sign*rake],shade:.86});
   }
 }
 function clerestory(b:HeritageBuilder){
@@ -606,12 +629,16 @@ function facade(b:HeritageBuilder){
   for(const sign of[-1,1])b.box([rakeLen+.3,.42,.8],[sign*6.15/2,(PED_BASE+PED_APEX)/2+.2,FRONT+.42],"marble",.47,{r:[0,0,-sign*rake],shade:1.02,duration:.02,lift:.6});
   const roofRake=Math.atan2(RIDGE-EAVE_Y,EAVE_X),roofRakeLen=Math.hypot(EAVE_X,RIDGE-EAVE_Y);
   for(const sign of[-1,1])b.box([roofRakeLen,.36,.6],[sign*EAVE_X/2,(EAVE_Y+RIDGE)/2+.15,FRONT-.05],"marble",.47,{r:[0,0,-sign*roofRake],shade:1.0,duration:.02,lift:.6});
-  b.box([12.3,.45,.08],w.at(w.len/2,16.05,.34),"stone",.60,{r:w.rot(),shade:.72});
-  inscription(b,w,"DEIPARAE VIRGINI A NAZARETH",16.05,10.8,.3,.39,.88);
+  b.box([12.3,.45,.08],w.at(w.len/2,16.05,.34),"gold",.60,{r:w.rot(),shade:1.04});
+  inscription(b,w,"DEIPARAE VIRGINI A NAZARETH",16.05,10.8,.3,.39,.88,"iron");
   for(const x of[-5.4,5.4])b.box([.06,5.2,.9],w.at(FRONT_S(x),13.4,.34),"gold",.60,{r:w.rot()});
   tympanum(b,w);
   // Rose window: stone ring, gilded spokes, dark reveal and glazing.
   const ring=new THREE.TorusGeometry(1.5,.16,8,48);b.add(ring,"stone",.62,{p:w.at(FRONT_S(0),13.6,.22),r:w.rot(),shade:.95});ring.dispose();
+  for(let k=0;k<24;k++){
+    const a=k*TAU/24;
+    b.sphere(w.at(FRONT_S(Math.sin(a)*1.63),13.6+Math.cos(a)*1.63,.25),[.065,.065,.045],"marble",.648,{lift:.12});
+  }
   const inner=new THREE.TorusGeometry(.5,.06,6,24);b.add(inner,"gold",.63,{p:w.at(FRONT_S(0),13.6,.1),r:w.rot()});inner.dispose();
   for(let k=0;k<12;k++){
     const a=k*TAU/12,pts:Point[]=[];
@@ -626,32 +653,30 @@ function facade(b:HeritageBuilder){
   for(let i=0;i<4;i++){const a=i*Math.PI/2;b.add(center,"gold",.647,{p:w.at(FRONT_S(Math.sin(a)*.17),13.6+Math.cos(a)*.17,.14),r:w.rot(),lift:.12});}
   const reveal=new THREE.CylinderGeometry(1.42,1.42,.06,40);reveal.rotateX(Math.PI/2);b.add(reveal,"recess",.62,{p:w.at(FRONT_S(0),13.6,-.1),r:w.rot()});reveal.dispose();
   const glazing=new THREE.CircleGeometry(1.4,40);b.add(glazing,"glass",.635,{p:w.at(FRONT_S(0),13.6,.02),r:w.rot(),lift:.1});glazing.dispose();
-  for(const x of[-3.75,3.75]){
-    b.box([1.2,2.8,.1],w.at(FRONT_S(x),12.95,-.16),"recess",.44,{r:w.rot()});
-    b.box([1.5,.2,.7],w.at(FRONT_S(x),11.5,.1),"marble",.44,{r:w.rot(),shade:.95});
-    archRing(b,w,FRONT_S(x),13.75,.56,.78,.7,.04,"marble",.45);
-    angel(b,w.at(FRONT_S(x),11.6,.05),0,.9,1.05,false);
-  }
+  for(const x of[-3.75,3.75])archWindow(b,w,FRONT_S(x),1.1,11.6,14.3,.45);
+  angel(b,[0,10.94,20.85],0,.9,1.42,false);
   for(const [x,wd,yt]of doors)door(b,w,FRONT_S(x),wd,PLINTH,yt,.66);
   for(const x of[-5.9,5.9])angel(b,w.at(FRONT_S(x),PED_BASE,.3),0,.94,1.05);
   cross(b,[0,PED_APEX+.1,FRONT+.35],1.4,.975);
 }
 function portico(b:HeritageBuilder){
-  const w=new Wall([-6.15,0,FRONT],[6.15,0,FRONT]),xs=[-5.35,-3.5,-1.7,1.7,3.5,5.35];
+  const w=new Wall([-6.15,0,FRONT],[6.15,0,FRONT]),xs=[-5.35,-1.7,1.7,5.35];
   xs.forEach((x,i)=>{
     column(b,[x,PLINTH,23.4],8.4,.36,.20+i*.008,"granite");
     for(let k=0;k<4;k++){const y=PLINTH+1.05+k*2.1;b.box([.8,2.05,.3],w.at(FRONT_S(x),y,.42),"marble",T.mason(y),{r:w.rot(),shade:1.03});}
   });
   b.box([13,.55,4.1],[0,9.875,22.05],"marble",.30,{duration:.03,lift:1,shade:.98});
-  b.box([12.6,.36,.06],[0,9.84,24.14],"stone",.31,{shade:.68});
-  inscription(b,new Wall([-6.3,0,24.14],[6.3,0,24.14]),"SALVE REGINA MATER MISERICORDIAE",9.765,11.7,.25,.035,.88);
+  b.box([12.6,.36,.06],[0,9.84,24.14],"gold",.31,{shade:1.02});
+  inscription(b,new Wall([-6.3,0,24.14],[6.3,0,24.14]),"SALVE REGINA MATER MISERICORDIAE",9.765,11.7,.25,.035,.88,"iron");
   b.box([13.6,.28,4.6],[0,10.3,22.1],"marble",.32,{duration:.02,lift:.6,shade:1.03});
   for(let x=-6.4;x<=6.4;x+=.45)b.box([.16,.2,.22],[x,10.02,24.3],"marble",.315,{shade:.88});
   // Pierced parapet over the portico.
-  balustrade(b,new Wall([-6.3,0,24.05],[6.3,0,24.05]),10.5,.34);
+  latticeParapet(b,new Wall([-6.3,0,24.05],[6.3,0,24.05]),10.5,.34);
   balustrade(b,new Wall([6.55,0,24.05],[6.55,0,20.5]),10.5,.345);
   balustrade(b,new Wall([-6.55,0,20.5],[-6.55,0,24.05]),10.5,.345);
   for(const x of[-6.55,6.55])b.box([.5,1.15,.5],[x,11.05,24.05],"marble",.34,{shade:1.02});
+  b.box([2.45,.66,.11],[0,10.96,24.25],"gold",.88,{shade:1.04,lift:.1});
+  inscription(b,new Wall([-1.2,0,24.25],[1.2,0,24.25]),"NAZARETH",10.99,1.8,.15,.08,.9,"iron");
 }
 function tower(b:HeritageBuilder,sign:number){
   const cx=sign*TOWER_X,cz=TOWER_Z,hw=TOWER_HW;

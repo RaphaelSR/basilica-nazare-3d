@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-export type SurfaceName = "marble" | "stone" | "granite" | "tile" | "wood" | "gold" | "iron" | "recess" | "moss" | "glass" | "ribbon";
+export type SurfaceName = "marble" | "stone" | "granite" | "tile" | "wood" | "gold" | "iron" | "recess" | "moss" | "glass" | "ribbon" | "mosaic";
 
 // Deterministic multi-scale wear: the basilica should age in coherent patches
 // (rain runs below cornices, warm clouding on plaster), not per-block confetti.
@@ -8,7 +8,7 @@ export function createHeritageMaterials(renderer: THREE.WebGLRenderer) {
   const textures: THREE.Texture[] = [];
   const palette: Record<SurfaceName, string> = {
     marble: "#e8e3d8", stone: "#858b84", granite: "#b9897c", tile: "#ab603e", wood: "#513724",
-    gold: "#c6a34d", iron: "#3a3835", recess: "#2a2622", moss: "#4a6b3a", glass: "#b6c8c3", ribbon: "#ffffff",
+    gold: "#c6a34d", iron: "#3a3835", recess: "#2a2622", moss: "#4a6b3a", glass: "#b6c8c3", ribbon: "#ffffff", mosaic: "#ffffff",
   };
   const output = {} as Record<SurfaceName, THREE.MeshStandardMaterial>;
   for (const [name, base] of Object.entries(palette) as [SurfaceName, string][]) {
@@ -18,6 +18,10 @@ export function createHeritageMaterials(renderer: THREE.WebGLRenderer) {
     }
     if(name==="ribbon"){
       output[name]=new THREE.MeshStandardMaterial({color:base,roughness:.82,metalness:0,side:THREE.DoubleSide,vertexColors:true});
+      continue;
+    }
+    if(name==="mosaic"){
+      output[name]=new THREE.MeshStandardMaterial({color:base,roughness:.5,metalness:.08,vertexColors:true});
       continue;
     }
     const canvas = document.createElement("canvas");
