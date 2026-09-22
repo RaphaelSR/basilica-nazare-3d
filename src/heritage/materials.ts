@@ -1,13 +1,13 @@
 import * as THREE from "three";
 
-export type SurfaceName = "marble" | "stone" | "tile" | "wood" | "gold" | "iron" | "recess" | "moss" | "glass";
+export type SurfaceName = "marble" | "stone" | "granite" | "tile" | "wood" | "gold" | "iron" | "recess" | "moss" | "glass";
 
 // Deterministic multi-scale wear: the basilica should age in coherent patches
 // (rain runs below cornices, warm clouding on plaster), not per-block confetti.
 export function createHeritageMaterials(renderer: THREE.WebGLRenderer) {
   const textures: THREE.Texture[] = [];
   const palette: Record<SurfaceName, string> = {
-    marble: "#e6e0d3", stone: "#8f8d86", tile: "#b0603a", wood: "#4d3323",
+    marble: "#e6e0d3", stone: "#858b84", granite: "#b58e80", tile: "#b0603a", wood: "#4d3323",
     gold: "#b48d3c", iron: "#3a3835", recess: "#2a2622", moss: "#4a6b3a", glass: "#b6c8c3",
   };
   const output = {} as Record<SurfaceName, THREE.MeshStandardMaterial>;
@@ -58,9 +58,9 @@ export function createHeritageMaterials(renderer: THREE.WebGLRenderer) {
         ctx.fillStyle=g;ctx.fillRect(x,0,w,h);
       }
     }
-    if (name === "stone") {
-      // Granite: dense dark and pale flecks.
-      for (let i = 0; i < 9000; i++) { ctx.fillStyle = rand() > .5 ? "rgba(40,40,42,.22)" : "rgba(220,220,214,.18)"; const s = .6 + rand() * 1.4; ctx.fillRect(rand() * size, rand() * size, s, s); }
+    if (name === "stone" || name === "granite") {
+      // Granite: dense dark and pale flecks; the pink variety reads as polished columns.
+      for (let i = 0; i < 9000; i++) { ctx.fillStyle = rand() > .5 ? "rgba(40,40,42,.22)" : "rgba(235,225,214,.2)"; const s = .6 + rand() * 1.4; ctx.fillRect(rand() * size, rand() * size, s, s); }
     }
     for(let i=0;i<17000;i++){
       ctx.globalAlpha=name==="tile"?.25:1;
@@ -79,7 +79,7 @@ export function createHeritageMaterials(renderer: THREE.WebGLRenderer) {
     for(let y=0;y<256;y++)for(let x=0;x<256;x++){
       const i=(y*256+x)*4;
       const grain=name==="wood"?Math.sin(x*.83+Math.sin(y*.033)*2)*20:0;
-      const v=128+(rand()-.5)*(name==="stone"?65:name==="marble"?22:32)+grain;
+      const v=128+(rand()-.5)*(name==="stone"?65:name==="granite"?18:name==="marble"?22:32)+grain;
       pixels.data[i]=pixels.data[i+1]=pixels.data[i+2]=v;pixels.data[i+3]=255;
     }
     dc.putImageData(pixels,0,0);
@@ -91,7 +91,7 @@ export function createHeritageMaterials(renderer: THREE.WebGLRenderer) {
     output[name]=new THREE.MeshStandardMaterial({
       map:texture,bumpMap:bump,roughnessMap:roughness,
       bumpScale:name==="marble"?.012:name==="tile"?.008:.024,
-      roughness:name==="gold"?.5:name==="iron"?.7:name==="tile"?.84:.95,
+      roughness:name==="gold"?.5:name==="granite"?.42:name==="iron"?.7:name==="tile"?.84:.95,
       metalness:name==="gold"?.7:name==="iron"?.4:0,vertexColors:true,
     });
   }

@@ -3,7 +3,7 @@ import BasilicaScene, { type DetailView } from './BasilicaScene';
 
 const DURATION=14;
 // Display-only labels; the real timing lives in heritage/architecture.ts.
-const stages=[['Embasamento de granito',.10],['Colunata da nave',.14],['Alvenaria em fiadas',.42],['Telhados e cornijas',.56],['Frontão e pórtico',.66],['Campanários',.72],['Cúpulas e lanternins',.90],['Mosaico e ornamentos',.995],['Basílica concluída',1]] as const;
+const stages=[['Embasamento de granito',.10],['Colunata interna',.14],['Alvenaria em fiadas',.40],['Telhado e frontão',.50],['Campanários',.64],['Templetes e cúpulas',.86],['Sinos, relógios e ornamentos',.995],['Basílica concluída',1]] as const;
 
 export default function App(){
   const [progress,setProgress]=useState(0),[playing,setPlaying]=useState(true);

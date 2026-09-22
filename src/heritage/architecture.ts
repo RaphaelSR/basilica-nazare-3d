@@ -3,9 +3,10 @@ import { HeritageBuilder, type Point } from "./builder";
 import type { SurfaceName } from "./materials";
 
 // Basílica Santuário de Nossa Senhora de Nazaré (Belém, PA) — a stylised
-// neoclassical miniature: twin bell towers, colonnaded portico, pediment with a
-// gilded tympanum, clerestory nave, lower side aisles, terracotta roofs and a
-// semicircular apse. Scene units; the finished building is about 34 units tall.
+// neoclassical miniature: one tall hall under a single terracotta gable roof,
+// twin bell towers crowned by round colonnaded tempietti and domes, a pink-granite
+// portico, a gilded pediment, a semicircular apse, and the lower chapel wing with
+// its arcaded gallery on the left flank. Scene units; about 34 units tall.
 
 const TAU=Math.PI*2;
 const variation=(n:number)=>{const v=Math.sin(n*127.1+31.7)*43758.5453;return v-Math.floor(v);};
@@ -23,21 +24,21 @@ function surfaceGrid(nx:number,ny:number,point:(u:number,v:number)=>Point,flip=f
 }
 
 // ---------- Design constants ----------
-const PLINTH=1.2, AISLE_TOP=9.6, NAVE_TOP=16, RIDGE=21.3;
-const NAVE_X=6.5, AISLE_X=11, FRONT=20, REAR=-20, APSE_R=6.2;
-const EAVE_X=7.3, EAVE_Y=16.55;
-const AISLE_EAVE_X=11.7, AISLE_EAVE_Y=10.3, AISLE_TOP_X=6.8, AISLE_TOP_Y=11.9;
-const TOWER_X=8.95, TOWER_Z=19.6, TOWER_HW=2.8, SHAFT_TOP=20.5, BELL_BASE=21.3, BELL_TOP=25, DRUM_BASE=25.75, DRUM_TOP=28.2, DOME_BASE=28.7;
+const PLINTH=1.2, STRING=8.6, WALL_TOP=16, RIDGE=21.3, PED_BASE=16.72, PED_APEX=19.2;
+const WALL_X=11, FRONT=20, REAR=-20, APSE_R=6.2, NAVE_X=6.5;
+const EAVE_X=11.8, EAVE_Y=16.55;
+const TOWER_X=8.95, TOWER_Z=19.6, TOWER_HW=2.8, SHAFT_TOP=20.5, BELL_BASE=21.3, BELL_TOP=25, DRUM_BASE=25.75;
+const TEMPIETTO_H=2.3, DOME_BASE=DRUM_BASE+.3+TEMPIETTO_H+.65;
+const ANNEX_X=16.5, ANNEX_TOP=8.4, ANNEX_Z0=-13, ANNEX_Z1=13, GALLERY_TOP=5.2, GALLERY_X=17, GALLERY_Z=22;
 const FRONT_S=(x:number)=>x+6.15;
-const aisleRoofX=(y:number)=>AISLE_EAVE_X-(y-AISLE_EAVE_Y)/(AISLE_TOP_Y-AISLE_EAVE_Y)*(AISLE_EAVE_X-AISLE_TOP_X);
-const gableHalfWidth=(y:number)=>y<EAVE_Y?NAVE_X:Math.min(NAVE_X,EAVE_X*(1-(y-EAVE_Y)/(RIDGE-EAVE_Y))-.2);
+const gableHalfWidth=(y:number)=>y<EAVE_Y?WALL_X:Math.min(WALL_X,EAVE_X*(1-(y-EAVE_Y)/(RIDGE-EAVE_Y))-.2);
+const pedimentHalfWidth=(y:number)=>6.15*(1-(y-PED_BASE)/(PED_APEX-PED_BASE));
 
 // ---------- One normalised clock ----------
 // Masonry rises as a horizontal wave from the ground; later stages are fixed offsets.
 const T={
   mason:(y:number)=>y<PLINTH?.012+(y/PLINTH)*.085:.10+(y-PLINTH)/(SHAFT_TOP-PLINTH)*.36,
   bell:(y:number)=>.48+(y-BELL_BASE)/(BELL_TOP-BELL_BASE)*.12,
-  drum:(y:number)=>.64+(y-DRUM_BASE)/(DRUM_TOP-DRUM_BASE)*.06,
 };
 
 // ---------- Wall helpers ----------
@@ -58,6 +59,8 @@ const arch=(s:number,w:number,yb:number,yt:number):Void=>(ss,y)=>{
 };
 const circle=(s:number,cy:number,r:number):Void=>(ss,y)=>(ss-s)**2+(y-cy)**2<r*r;
 const rect=(s:number,w:number,yb:number,yt:number):Void=>(ss,y)=>y>=yb&&y<=yt&&Math.abs(ss-s)<w/2;
+// Grey-green and white marble banding on the lower storey of the front.
+const banded=(row:number,y:number):Surface=>y<9.6&&Math.floor(row/2)%2===1?["stone",.82]:"marble";
 
 interface CourseSpec{y0:number;y1:number;thick?:number;course?:number;block?:number;out?:number;voids?:Void[];
   extent?:(y:number)=>[number,number]|null;material:(row:number,y:number)=>Surface;start:(y:number)=>number;shade?:number;lift?:number}
@@ -123,6 +126,7 @@ function rectWindow(b:HeritageBuilder,w:Wall,s:number,width:number,yb:number,yt:
   b.box([width+.1,yt-yb+.1,.08],w.at(s,(yb+yt)/2,-.14),"recess",start,{r:w.rot()});
   b.box([width,yt-yb,.02],w.at(s,(yb+yt)/2,-.02),"glass",start+.004,{r:w.rot(),lift:.1});
   b.box([.05,yt-yb,.05],w.at(s,(yb+yt)/2,-.02),"iron",start+.004,{r:w.rot()});
+  b.box([width-.05,.05,.05],w.at(s,(yb+yt)/2,-.02),"iron",start+.004,{r:w.rot()});
   for(const dx of[-1,1])b.box([.2,yt-yb+.3,.72],w.at(s+dx*(width/2+.1),(yb+yt)/2,.04),"marble",start,{r:w.rot(),shade:.93});
   b.box([width+.7,.24,.8],w.at(s,yt+.22,.06),"marble",start+.004,{r:w.rot(),shade:.95});
   b.box([width+.6,.18,.9],w.at(s,yb-.09,.08),"marble",start,{r:w.rot(),shade:.96});
@@ -139,15 +143,27 @@ function door(b:HeritageBuilder,w:Wall,s:number,width:number,yb:number,yt:number
   archRing(b,w,s,cy,r+.02,r+.3,.8,.06,"marble",start+.01);
 }
 /** Corinthian-flavoured column: stepped base, tapering shaft, bell capital with volutes and abacus. Total height `h` above `p`. */
-function column(b:HeritageBuilder,p:Point,h:number,r:number,start:number,material:SurfaceName="marble"){
+function column(b:HeritageBuilder,p:Point,h:number,r:number,start:number,shaftMaterial:SurfaceName="marble"){
   b.box([r*2.6,.22,r*2.6],[p[0],p[1]+.11,p[2]],"stone",start,{shade:.9});
   const torus=new THREE.TorusGeometry(r*1.12,r*.2,6,20);torus.rotateX(Math.PI/2);
-  b.add(torus,material,start+.002,{p:[p[0],p[1]+.3,p[2]]});torus.dispose();
+  b.add(torus,"marble",start+.002,{p:[p[0],p[1]+.3,p[2]]});torus.dispose();
   const shaft=h-1.1,top=p[1]+.35+shaft;
-  b.cylinder(r*.86,r,shaft,[p[0],p[1]+.35+shaft/2,p[2]],material,start+.004,{duration:.03,lift:3});
-  b.cylinder(r*1.45,r*.86,.55,[p[0],top+.275,p[2]],material,start+.03,{shade:.95});
-  for(let i=0;i<4;i++){const a=i*Math.PI/2+Math.PI/4;b.sphere([p[0]+Math.cos(a)*r*1.35,top+.5,p[2]+Math.sin(a)*r*1.35],[r*.28,r*.22,r*.28],material,start+.032,{shade:.85});}
-  b.box([r*3,.2,r*3],[p[0],top+.65,p[2]],material,start+.034,{shade:1.02});
+  b.cylinder(r*.86,r,shaft,[p[0],p[1]+.35+shaft/2,p[2]],shaftMaterial,start+.004,{duration:.03,lift:3});
+  b.cylinder(r*1.45,r*.86,.55,[p[0],top+.275,p[2]],"marble",start+.03,{shade:.95});
+  for(let i=0;i<4;i++){const a=i*Math.PI/2+Math.PI/4;b.sphere([p[0]+Math.cos(a)*r*1.35,top+.5,p[2]+Math.sin(a)*r*1.35],[r*.28,r*.22,r*.28],"marble",start+.032,{shade:.85});}
+  b.box([r*3,.2,r*3],[p[0],top+.65,p[2]],"marble",start+.034,{shade:1.02});
+}
+/** Slender polished-granite colonnette with a plain base and abacus. */
+function colonnette(b:HeritageBuilder,p:Point,h:number,r:number,start:number){
+  b.cylinder(r*1.4,r*1.5,.12,[p[0],p[1]+.06,p[2]],"marble",start,{shade:.95});
+  b.cylinder(r*.92,r,h-.4,[p[0],p[1]+.12+(h-.4)/2,p[2]],"granite",start+.003,{duration:.02,lift:1.2});
+  b.cylinder(r*1.3,r*.92,.14,[p[0],p[1]+h-.21,p[2]],"marble",start+.02,{shade:.95});
+  b.box([r*2.8,.14,r*2.8],[p[0],p[1]+h-.07,p[2]],"marble",start+.022,{shade:1.02});
+}
+function balustrade(b:HeritageBuilder,w:Wall,y:number,start:number,h=.9){
+  b.box([w.len+.3,.12,.3],w.at(w.len/2,y+.06),"marble",start,{r:w.rot(),shade:.96});
+  b.box([w.len+.3,.15,.34],w.at(w.len/2,y+h),"marble",start+.01,{r:w.rot(),shade:1.02});
+  for(let s=.3;s<w.len-.2;s+=.42)b.cylinder(.06,.09,h-.2,w.at(s,y+h/2-.03),"marble",start+.004,{shade:.95});
 }
 function angel(b:HeritageBuilder,p:Point,yaw:number,start:number,scale=1){
   const P=(x:number,y:number,z:number):Point=>{const q=facePoint(x*scale,y*scale,z*scale,yaw);return[p[0]+q[0],p[1]+q[1],p[2]+q[2]];};
@@ -160,6 +176,14 @@ function angel(b:HeritageBuilder,p:Point,yaw:number,start:number,scale=1){
 function cross(b:HeritageBuilder,p:Point,h:number,start:number){
   b.box([h*.1,h,h*.1],[p[0],p[1]+h/2,p[2]],"gold",start,{duration:.006,lift:.4});
   b.box([h*.55,h*.1,h*.1],[p[0],p[1]+h*.72,p[2]],"gold",start+.004,{duration:.006,lift:.4});
+}
+function clock(b:HeritageBuilder,w:Wall,s:number,y:number,start:number){
+  const face=new THREE.CylinderGeometry(.95,.95,.08,32);face.rotateX(Math.PI/2);
+  b.add(face,"marble",start,{p:w.at(s,y,.3),r:w.rot(),shade:1.12});face.dispose();
+  const ring=new THREE.TorusGeometry(.98,.07,6,32);b.add(ring,"iron",start+.003,{p:w.at(s,y,.34),r:w.rot()});ring.dispose();
+  for(let i=0;i<12;i++){const a=i/12*TAU;b.box([.05,i%3?.1:.18,.03],w.at(s+Math.sin(a)*.8,y+Math.cos(a)*.8,.36),"iron",start+.004,{r:w.rot(-a)});}
+  b.box([.07,.55,.04],w.at(s,y+.24,.37),"iron",start+.005,{r:w.rot(-.55)});
+  b.box([.07,.75,.04],w.at(s,y-.3,.37),"iron",start+.005,{r:w.rot(.35)});
 }
 function palm(b:HeritageBuilder,x:number,z:number,h:number,seed:number){
   const lean=(variation(seed)-.5)*.9,frond=b.geo("frond",()=>new THREE.SphereGeometry(1,8,5));
@@ -194,16 +218,34 @@ function tiledSlope(b:HeritageBuilder,eaveA:Point,eaveB:Point,up:Point,start:num
       const x=i*spacing+spacing/2;if(x>len)continue;
       const seed=i*13+j*47+start*1000;
       const g=surfaceGrid(5,1,(u,v)=>{const th=(1-u)*Math.PI;const p=at(x+Math.cos(th)*.15,v0+(v1-v0)*v,.03+Math.sin(th)*.11);return[p.x,p.y,p.z];},flip);
-      b.add(g,"tile",start+.01+j*.0055+i*.0001,{shade:.88+variation(seed)*.2,tint:[1,.96+variation(seed+1)*.07,.94+variation(seed+2)*.09],duration:.012,lift:.25});g.dispose();
+      b.add(g,"tile",start+.01+j*.0045+i*.0001,{shade:.88+variation(seed)*.2,tint:[1,.96+variation(seed+1)*.07,.94+variation(seed+2)*.09],duration:.012,lift:.25});g.dispose();
     }
   }
+}
+/** Gable roof with king-post trusses, purlins, ridge beam, two tiled slopes and ridge tiles. */
+function gableRoof(b:HeritageBuilder,cx:number,halfSpan:number,eaveY:number,ridgeY:number,z0:number,z1:number,trussStep:number,start:number,heavy=true){
+  const rise=ridgeY-eaveY,rake=Math.atan2(rise,halfSpan),rakeLen=Math.hypot(halfSpan,rise),len=z1-z0;
+  for(let z=z0+trussStep/2,i=0;z<z1;z+=trussStep,i++){
+    const t=start+i*.004;
+    b.box([2*halfSpan-.6,heavy?.32:.22,heavy?.3:.2],[cx,eaveY-.35,z],"wood",t,{duration:.02,lift:2});
+    for(const sign of[-1,1])b.box([rakeLen,heavy?.3:.2,heavy?.26:.18],[cx+sign*halfSpan/2,(eaveY+ridgeY)/2-.1,z],"wood",t+.004,{r:[0,0,-sign*rake],duration:.02,lift:2});
+    if(heavy)b.box([.26,rise-.5,.26],[cx,(eaveY+ridgeY)/2-.1,z],"wood",t+.002,{duration:.02,lift:2});
+  }
+  for(const t of(heavy?[.25,.5,.75]:[.5]))for(const sign of[-1,1])b.box([.2,.2,len-1],[cx+sign*halfSpan*(1-t),eaveY+rise*t-.18,(z0+z1)/2],"wood",start+.04,{lift:1});
+  b.box([.26,.34,len-1],[cx,ridgeY-.15,(z0+z1)/2],"wood",start+.042,{lift:1});
+  tiledSlope(b,[cx+halfSpan,eaveY,z1],[cx+halfSpan,eaveY,z0],[-halfSpan,rise,0],start+.055);
+  tiledSlope(b,[cx-halfSpan,eaveY,z0],[cx-halfSpan,eaveY,z1],[halfSpan,rise,0],start+.055);
+  const ridgeStart=start+.055+.01+Math.ceil(rakeLen/.6)*.0045;
+  for(let i=0,z=z0+.1;z<z1;z+=.64,i++)b.cylinder(.2,.21,.6,[cx,ridgeY+.12,z],"tile",ridgeStart+i*.0003,{r:[Math.PI/2,0,0],shade:1+variation(i)*.12});
 }
 
 // ---------- Praça Santuário ----------
 export function courtyard(b:HeritageBuilder){
-  b.box([64,.4,96],[0,-.42,0],"stone",-1,{lift:0,shade:.9});
-  for(let i=-10;i<=10;i++)for(let j=-15;j<=15;j++){
-    const x=i*3,z=j*3;if(Math.abs(x)<12.5&&z>-27&&z<24.5)continue;
+  b.box([70,.4,96],[0,-.42,0],"stone",-1,{lift:0,shade:.9});
+  for(let i=-11;i<=11;i++)for(let j=-15;j<=15;j++){
+    const x=i*3,z=j*3;
+    if(Math.abs(x)<12.5&&z>-27&&z<24.5)continue;
+    if(x<-10&&x>-19&&z>-15&&z<24.5)continue;
     b.box([2.92,.08,2.92],[x,-.1+(variation(i*7+j*13)-.5)*.01,z],"stone",-1,{lift:0,shade:(i+j)%2?.84:1});
   }
   for(let i=0;i<5;i++)b.box([15-i*.3,.24,.92],[0,.12+i*.24,24.85+(4-i)*.9],"stone",.004+i*.002,{lift:.2,shade:1.06});
@@ -211,51 +253,43 @@ export function courtyard(b:HeritageBuilder){
   for(const sign of[-1,1])for(const y of[.55,1.15])b.box([11.2,.06,.06],[sign*8.5,y,31],"iron",-1,{lift:0});
   for(let x=-13.5;x<=13.5;x+=.5){if(Math.abs(x)<3)continue;b.box([.04,1.05,.04],[x,.6,31],"iron",-1,{lift:0});}
   for(let i=0;i<7;i++)palm(b,17,-18+i*6.2,8.5+variation(i)*2,i);
-  for(let i=0;i<4;i++)palm(b,-17,-14+i*7,8+variation(i+9)*2.5,i+9);
+  for(let i=0;i<4;i++)palm(b,-21.5,-14+i*7,8+variation(i+9)*2.5,i+9);
   for(const sign of[-1,1]){b.cylinder(.08,.13,3.6,[sign*9.5,1.8,29.5],"iron",-1,{lift:0});b.sphere([sign*9.5,3.85,29.5],[.26,.34,.26],"glass",-1,{lift:0});}
 }
 
 // ---------- Building ----------
 function colonnade(b:HeritageBuilder){
-  // Interior arcade: the nave clerestory stands on these, never on air.
+  // Interior arcade: the hall's roof trusses bear on the walls, the colonnade carries the galleries inside.
   for(const sign of[-1,1]){
     for(let i=0;i<10;i++){const z=-18+i*4;column(b,[sign*NAVE_X,PLINTH,z],7.85,.42,.05+i*.003);}
     b.box([.75,.55,40],[sign*NAVE_X,9.325,0],"marble",.095,{duration:.02,lift:1,shade:.95});
   }
 }
-function aisleWalls(b:HeritageBuilder){
+function sideWalls(b:HeritageBuilder){
+  // One tall flank per side: rectangular windows below the string course, arched above, pilasters between bays.
   for(const sign of[-1,1]){
-    const w=sign>0?new Wall([AISLE_X,0,16.8],[AISLE_X,0,REAR]):new Wall([-AISLE_X,0,REAR],[-AISLE_X,0,16.8]);
+    const w=sign>0?new Wall([WALL_X,0,16.8],[WALL_X,0,REAR]):new Wall([-WALL_X,0,REAR],[-WALL_X,0,16.8]);
     const sOf=(z:number)=>sign>0?16.8-z:z-REAR;
     const zs=[-16,-12,-8,-4,0,4,8,12];
+    const voids=[...zs.map(z=>rect(sOf(z),1.4,3.2,7.2)),...zs.map(z=>arch(sOf(z),1.5,10.6,14.4))];
     courses(b,w,{y0:0,y1:PLINTH,course:.4,block:1.3,material:()=>"stone",start:T.mason,shade:.9});
-    courses(b,w,{y0:PLINTH,y1:AISLE_TOP,voids:zs.map(z=>arch(sOf(z),1.5,3.3,7.5)),material:()=>"marble",start:T.mason});
-    for(const z of zs)archWindow(b,w,sOf(z),1.5,3.3,7.5,.30);
-    for(const z of[-18,-14,-10,-6,-2,2,6,10,14])for(let k=0;k<4;k++){const y=PLINTH+1.05+k*2.1;b.box([.7,2.05,.32],w.at(sOf(z),y,.3),"marble",T.mason(y),{r:w.rot(),shade:1.03});}
-    cornice(b,[w],AISLE_TOP,.28);
-  }
-}
-function naveWalls(b:HeritageBuilder){
-  for(const sign of[-1,1]){
-    const w=sign>0?new Wall([NAVE_X,0,16.8],[NAVE_X,0,REAR]):new Wall([-NAVE_X,0,REAR],[-NAVE_X,0,16.8]);
-    const sOf=(z:number)=>sign>0?16.8-z:z-REAR;
-    const zs=[-16,-12,-8,-4,0,4,8,12];
-    courses(b,w,{y0:AISLE_TOP,y1:NAVE_TOP,voids:zs.map(z=>arch(sOf(z),1.5,12.4,15.2)),material:()=>"marble",start:T.mason});
-    for(const z of zs)archWindow(b,w,sOf(z),1.5,12.4,15.2,.42);
-    cornice(b,[w],NAVE_TOP,.385);
+    courses(b,w,{y0:PLINTH,y1:WALL_TOP,voids,material:()=>"marble",start:T.mason});
+    for(const z of zs){rectWindow(b,w,sOf(z),1.4,3.2,7.2,.30);archWindow(b,w,sOf(z),1.5,10.6,14.4,.42);}
+    for(const z of[-18,-14,-10,-6,-2,2,6,10,14])for(let k=0;k<7;k++){const y=PLINTH+1.06+k*2.11;b.box([.7,2.06,.32],w.at(sOf(z),y,.3),"marble",T.mason(y),{r:w.rot(),shade:1.03});}
+    strip(b,w,STRING,.28,.2,.7,"marble",T.mason(STRING)+.01,1.02);
+    cornice(b,[w],WALL_TOP,.385);
   }
 }
 function rearAndApse(b:HeritageBuilder){
-  const w=new Wall([AISLE_X,0,REAR],[-AISLE_X,0,REAR]);
+  const w=new Wall([WALL_X,0,REAR],[-WALL_X,0,REAR]);
   const extent=(y:number):[number,number]|null=>{
-    if(y<AISLE_TOP)return[0,w.len];
-    if(y<AISLE_TOP_Y){const xa=Math.min(AISLE_X,aisleRoofX(y));return[AISLE_X-xa,AISLE_X+xa];}
-    const hw=gableHalfWidth(y);return hw<.3?null:[AISLE_X-hw,AISLE_X+hw];
+    if(y<WALL_TOP)return[0,w.len];
+    const hw=gableHalfWidth(y);return hw<.3?null:[WALL_X-hw,WALL_X+hw];
   };
   courses(b,w,{y0:0,y1:PLINTH,course:.4,block:1.3,material:()=>"stone",start:T.mason,shade:.9});
   courses(b,w,{y0:PLINTH,y1:RIDGE-.3,extent,material:()=>"marble",start:T.mason});
-  cornice(b,[new Wall([AISLE_X,0,REAR],[NAVE_X+.3,0,REAR]),new Wall([-NAVE_X-.3,0,REAR],[-AISLE_X,0,REAR])],AISLE_TOP,.28);
-  cornice(b,[new Wall([NAVE_X,0,REAR],[-NAVE_X,0,REAR])],NAVE_TOP,.385);
+  strip(b,w,STRING,.28,.2,.7,"marble",T.mason(STRING)+.01,1.02);
+  cornice(b,[w],WALL_TOP,.385);
   // Apse: eleven facets on a semicircle, three arched windows, conical tiled roof.
   const N=11,half=APSE_R*Math.tan(Math.PI/(2*N)),faces:Wall[]=[];
   for(let i=0;i<N;i++){
@@ -281,17 +315,20 @@ function facade(b:HeritageBuilder){
   const w=new Wall([-6.15,0,FRONT],[6.15,0,FRONT]);
   const doors:[number,number,number][]=[[0,2.6,6.6],[-4.42,1.05,5.2],[4.42,1.05,5.2]];
   const voids=[...doors.map(([x,wd,yt])=>arch(FRONT_S(x),wd,PLINTH,yt)),circle(FRONT_S(0),13.4,1.4),arch(FRONT_S(-3.75),1.1,11.4,14.1),arch(FRONT_S(3.75),1.1,11.4,14.1)];
-  const striped=(row:number,y:number):Surface=>y<8.4&&row%2===1?["stone",1.18]:"marble";
   courses(b,w,{y0:0,y1:PLINTH,course:.4,block:1.3,material:()=>"stone",start:T.mason,shade:.9});
-  courses(b,w,{y0:PLINTH,y1:NAVE_TOP,voids,material:striped,start:T.mason});
-  cornice(b,[w],NAVE_TOP,.39);
-  // Gilded tympanum set back behind raking cornices; the roof line defines the triangle.
-  courses(b,w,{y0:NAVE_TOP+.72,y1:RIDGE-.35,thick:.45,out:-.08,block:.8,extent:y=>{const hw=gableHalfWidth(y)-.35;return hw<.3?null:[FRONT_S(-hw),FRONT_S(hw)];},material:()=>["gold",.95],start:T.mason});
-  const rake=Math.atan2(RIDGE-EAVE_Y,EAVE_X),rakeLen=Math.hypot(EAVE_X,RIDGE-EAVE_Y);
-  for(const sign of[-1,1])b.box([rakeLen+.2,.42,.8],[sign*EAVE_X/2,(EAVE_Y+RIDGE)/2+.18,FRONT+.42],"marble",.47,{r:[0,0,-sign*rake],shade:1.02,duration:.02,lift:.6});
+  courses(b,w,{y0:PLINTH,y1:WALL_TOP,voids,material:banded,start:T.mason});
+  cornice(b,[w],WALL_TOP,.39);
+  // Gilded tympanum in front; the plain gable wall of the main roof rises behind it.
+  courses(b,w,{y0:PED_BASE,y1:PED_APEX-.12,thick:.45,out:-.08,block:.8,extent:y=>{const hw=pedimentHalfWidth(y)-.3;return hw<.3?null:[FRONT_S(-hw),FRONT_S(hw)];},material:()=>["gold",.95],start:T.mason});
+  courses(b,w,{y0:PED_BASE,y1:RIDGE-.3,thick:.4,out:-.55,block:.9,extent:y=>{const hw=Math.min(6.15,gableHalfWidth(y));return hw<.3?null:[FRONT_S(-hw),FRONT_S(hw)];},material:()=>"marble",start:T.mason});
+  const pedRise=PED_APEX-PED_BASE,rake=Math.atan2(pedRise,6.15),rakeLen=Math.hypot(6.15,pedRise);
+  for(const sign of[-1,1])b.box([rakeLen+.3,.42,.8],[sign*6.15/2,(PED_BASE+PED_APEX)/2+.2,FRONT+.42],"marble",.47,{r:[0,0,-sign*rake],shade:1.02,duration:.02,lift:.6});
+  const roofRake=Math.atan2(RIDGE-EAVE_Y,EAVE_X),roofRakeLen=Math.hypot(EAVE_X,RIDGE-EAVE_Y);
+  for(const sign of[-1,1])b.box([roofRakeLen,.36,.6],[sign*EAVE_X/2,(EAVE_Y+RIDGE)/2+.15,FRONT-.05],"marble",.47,{r:[0,0,-sign*roofRake],shade:1.0,duration:.02,lift:.6});
   b.box([12.3,.32,.06],w.at(w.len/2,15.55,.36),"gold",.60,{r:w.rot()});
-  b.sphere(w.at(w.len/2,17.9,.18),[.42,.65,.3],"marble",.93,{shade:1.08});
-  b.sphere(w.at(w.len/2,18.75,.18),[.2,.22,.18],"marble",.933,{shade:1.08});
+  for(const x of[-5.4,5.4])b.box([.06,5.2,.9],w.at(FRONT_S(x),13.1,.34),"gold",.60,{r:w.rot()});
+  b.sphere(w.at(w.len/2,17.5,.18),[.3,.5,.22],"marble",.93,{shade:1.08});
+  b.sphere(w.at(w.len/2,18.15,.18),[.16,.17,.14],"marble",.933,{shade:1.08});
   // Rose window: stone ring, gilded spokes, dark reveal and glazing.
   const ring=new THREE.TorusGeometry(1.5,.16,8,48);b.add(ring,"stone",.62,{p:w.at(FRONT_S(0),13.4,.22),r:w.rot(),shade:.95});ring.dispose();
   const inner=new THREE.TorusGeometry(.5,.06,6,24);b.add(inner,"gold",.63,{p:w.at(FRONT_S(0),13.4,.1),r:w.rot()});inner.dispose();
@@ -302,62 +339,35 @@ function facade(b:HeritageBuilder){
     b.box([1.2,2.8,.1],w.at(FRONT_S(x),12.75,-.16),"recess",.44,{r:w.rot()});
     b.box([1.5,.2,.7],w.at(FRONT_S(x),11.3,.1),"marble",.44,{r:w.rot(),shade:.95});
     archRing(b,w,FRONT_S(x),13.55,.56,.78,.7,.04,"marble",.45);
-    angel(b,w.at(FRONT_S(x),11.4,-.05),0,.9,.75);
+    if(x>0)angel(b,w.at(FRONT_S(x),11.4,-.05),0,.9,.75);
   }
   for(const [x,wd,yt]of doors)door(b,w,FRONT_S(x),wd,PLINTH,yt,.66);
-  for(const x of[-5.9,5.9])angel(b,w.at(FRONT_S(x),NAVE_TOP+.72,.3),0,.94,1.05);
-  cross(b,[0,RIDGE+.2,FRONT+.35],1.5,.975);
+  for(const x of[-5.9,5.9])angel(b,w.at(FRONT_S(x),PED_BASE,.3),0,.94,1.05);
+  cross(b,[0,PED_APEX+.1,FRONT+.35],1.4,.975);
 }
 function portico(b:HeritageBuilder){
   const w=new Wall([-6.15,0,FRONT],[6.15,0,FRONT]),xs=[-5.35,-3.5,-1.7,1.7,3.5,5.35];
   xs.forEach((x,i)=>{
-    column(b,[x,PLINTH,23.4],8.4,.36,.20+i*.008);
+    column(b,[x,PLINTH,23.4],8.4,.36,.20+i*.008,"granite");
     for(let k=0;k<4;k++){const y=PLINTH+1.05+k*2.1;b.box([.8,2.05,.3],w.at(FRONT_S(x),y,.42),"marble",T.mason(y),{r:w.rot(),shade:1.03});}
   });
   b.box([13,.55,4.1],[0,9.875,22.05],"marble",.30,{duration:.03,lift:1,shade:.98});
   b.box([12.6,.3,.06],[0,9.9,24.14],"gold",.31);
   b.box([13.6,.28,4.6],[0,10.3,22.1],"marble",.32,{duration:.02,lift:.6,shade:1.03});
   for(let x=-6.4;x<=6.4;x+=.45)b.box([.16,.2,.22],[x,10.02,24.3],"marble",.315,{shade:.88});
-  // Balustrade over the portico.
-  const rails=(a:Point,c:Point,start:number)=>{
-    const ww=new Wall(a,c);
-    b.box([ww.len,.14,.3],ww.at(ww.len/2,10.55),"marble",start,{r:ww.rot(),shade:.96});
-    b.box([ww.len,.16,.34],ww.at(ww.len/2,11.45),"marble",start+.01,{r:ww.rot(),shade:1.02});
-    for(let s=.3;s<ww.len-.2;s+=.43)b.cylinder(.07,.1,.76,ww.at(s,11,0),"marble",start+.004,{shade:.95});
-  };
-  rails([-6.3,0,24.05],[6.3,0,24.05],.34);rails([6.55,0,24.05],[6.55,0,20.5],.345);rails([-6.55,0,20.5],[-6.55,0,24.05],.345);
+  // Pierced parapet over the portico.
+  balustrade(b,new Wall([-6.3,0,24.05],[6.3,0,24.05]),10.5,.34);
+  balustrade(b,new Wall([6.55,0,24.05],[6.55,0,20.5]),10.5,.345);
+  balustrade(b,new Wall([-6.55,0,20.5],[-6.55,0,24.05]),10.5,.345);
   for(const x of[-6.55,6.55])b.box([.5,1.15,.5],[x,11.05,24.05],"marble",.34,{shade:1.02});
 }
-function aisleRoofs(b:HeritageBuilder){
-  const tilt=Math.atan2(AISLE_TOP_Y-AISLE_EAVE_Y,AISLE_EAVE_X-AISLE_TOP_X),len=Math.hypot(AISLE_EAVE_X-AISLE_TOP_X,AISLE_TOP_Y-AISLE_EAVE_Y);
-  for(const sign of[-1,1]){
-    for(let z=-19.5;z<16.8;z+=2)b.box([len,.22,.18],[sign*(AISLE_EAVE_X+AISLE_TOP_X)/2,(AISLE_EAVE_Y+AISLE_TOP_Y)/2+.1,z],"wood",.30+(z+20)*.0008,{r:[0,0,-sign*tilt],duration:.015,lift:1.2});
-    b.box([.22,.22,37.2],[sign*(AISLE_X+.4),AISLE_EAVE_Y+.14,-1.8],"wood",.305,{lift:1});
-    b.box([.22,.22,37.2],[sign*9.2,AISLE_EAVE_Y+(AISLE_EAVE_X-9.2)/(AISLE_EAVE_X-AISLE_TOP_X)*(AISLE_TOP_Y-AISLE_EAVE_Y)+.14,-1.8],"wood",.305,{lift:1});
-    if(sign>0)tiledSlope(b,[AISLE_EAVE_X,AISLE_EAVE_Y,16.9],[AISLE_EAVE_X,AISLE_EAVE_Y,-20.4],[AISLE_TOP_X-AISLE_EAVE_X,AISLE_TOP_Y-AISLE_EAVE_Y,0],.33);
-    else tiledSlope(b,[-AISLE_EAVE_X,AISLE_EAVE_Y,-20.4],[-AISLE_EAVE_X,AISLE_EAVE_Y,16.9],[AISLE_EAVE_X-AISLE_TOP_X,AISLE_TOP_Y-AISLE_EAVE_Y,0],.33);
-    b.box([.26,.3,37.3],[sign*(NAVE_X+.28),AISLE_TOP_Y+.1,-1.75],"marble",.405,{shade:.95});
-  }
-}
-function naveRoof(b:HeritageBuilder){
+function mainRoof(b:HeritageBuilder){
+  gableRoof(b,0,EAVE_X,EAVE_Y,RIDGE,-20.7,20.7,4,.40);
   const rake=Math.atan2(RIDGE-EAVE_Y,EAVE_X),rakeLen=Math.hypot(EAVE_X,RIDGE-EAVE_Y);
-  // King-post trusses, purlins and ridge beam go up before any tile.
-  for(let i=0;i<10;i++){
-    const z=-18+i*4,start=.40+i*.005;
-    b.box([2*EAVE_X-.4,.32,.3],[0,NAVE_TOP+.18,z],"wood",start,{duration:.02,lift:2});
-    for(const sign of[-1,1])b.box([rakeLen,.3,.26],[sign*EAVE_X/2,(EAVE_Y+RIDGE)/2-.1,z],"wood",start+.004,{r:[0,0,-sign*rake],duration:.02,lift:2});
-    b.box([.26,RIDGE-NAVE_TOP-.6,.26],[0,(NAVE_TOP+RIDGE)/2-.1,z],"wood",start+.002,{duration:.02,lift:2});
-  }
-  for(const t of[.3,.6,.9])for(const sign of[-1,1])b.box([.2,.2,40.4],[sign*EAVE_X*(1-t),EAVE_Y+(RIDGE-EAVE_Y)*t-.18,0],"wood",.445,{lift:1});
-  b.box([.26,.34,40.4],[0,RIDGE-.15,0],"wood",.447,{lift:1});
-  tiledSlope(b,[EAVE_X,EAVE_Y,20.7],[EAVE_X,EAVE_Y,-20.7],[-EAVE_X,RIDGE-EAVE_Y,0],.46);
-  tiledSlope(b,[-EAVE_X,EAVE_Y,-20.7],[-EAVE_X,EAVE_Y,20.7],[EAVE_X,RIDGE-EAVE_Y,0],.46);
-  for(let i=0;i<=64;i++){const z=-20.5+i*.64;b.cylinder(.2,.21,.6,[0,RIDGE+.12,z],"tile",.555+i*.0004,{r:[Math.PI/2,0,0],shade:1+variation(i)*.12});}
-  // Raking cornice on the rear gable (the front one belongs to the pediment).
   for(const sign of[-1,1])b.box([rakeLen+.2,.42,.8],[sign*EAVE_X/2,(EAVE_Y+RIDGE)/2+.18,REAR-.42],"marble",.47,{r:[0,0,-sign*rake],shade:1.02,duration:.02,lift:.6});
-  // Small dormers, three per slope.
-  for(const sign of[-1,1])for(const z of[-10,0,10]){
-    const t=.45,x=sign*EAVE_X*(1-t),y=EAVE_Y+(RIDGE-EAVE_Y)*t;
+  // Small dormers, three per slope, low on the roof.
+  for(const sign of[-1,1])for(const z of[-11,-1,9]){
+    const t=.3,x=sign*EAVE_X*(1-t),y=EAVE_Y+(RIDGE-EAVE_Y)*t;
     b.box([.7,.75,1],[x,y+.42,z],"marble",.58,{shade:1.02});
     b.box([.02,.4,.5],[x+sign*.36,y+.42,z],"recess",.584);
     for(const side of[-1,1])b.box([.9,.06,.64],[x,y+.95,z+side*.24],"tile",.586,{r:[side*.7,0,0],shade:.9});
@@ -373,26 +383,32 @@ function tower(b:HeritageBuilder,sign:number){
     new Wall([cx-h,0,cz-h],[cx-h,0,cz+h]),
   ];
   const faces=square(hw),outer=sign>0?1:3;
-  const striped=(row:number,y:number):Surface=>y<8.4&&row%2===1?["stone",1.18]:"marble";
   faces.forEach((f,i)=>{
     const voids:Void[]=[];
-    if(i===0)voids.push(arch(hw,1.1,11.8,14.4),rect(hw,1,4.6,6.9));
-    if(i===outer)voids.push(arch(hw,1.1,11.8,14.4));
+    if(i===0)voids.push(arch(hw,1.1,11.8,14.4),rect(hw,1,4.6,6.9),circle(hw,18.3,1.05));
+    if(i===outer)voids.push(arch(hw,1.1,11.8,14.4),circle(hw,18.3,1.05));
     courses(b,f,{y0:0,y1:PLINTH,course:.4,block:1.3,material:()=>"stone",start:T.mason,shade:.9});
-    courses(b,f,{y0:PLINTH,y1:SHAFT_TOP,block:.95,voids,material:striped,start:T.mason});
+    courses(b,f,{y0:PLINTH,y1:SHAFT_TOP,block:.95,voids,material:banded,start:T.mason});
     if(i===0){archWindow(b,f,hw,1.1,11.8,14.4,.44);rectWindow(b,f,hw,1,4.6,6.9,.44);}
     if(i===outer)archWindow(b,f,hw,1.1,11.8,14.4,.44);
+    if(i===0||i===outer){clock(b,f,hw,18.3,.47);b.box([hw*2-.4,.3,.06],f.at(hw,15.55,.34),"gold",.60,{r:f.rot()});}
   });
   for(const dx of[-1,1])for(const dz of[-1,1])for(let k=0;k<5;k++){const y=PLINTH+1.93+k*3.86;b.box([.75,3.8,.75],[cx+dx*hw,y,cz+dz*hw],"marble",T.mason(y),{shade:1.03});}
-  cornice(b,faces,AISLE_TOP,.28,.7);cornice(b,faces,NAVE_TOP,.39,.7);cornice(b,faces,SHAFT_TOP,.465,1.1);
-  // Bell stage: four open arches, corner pilasters, a real bell inside.
+  cornice(b,faces,9.6,.28,.7);cornice(b,faces,WALL_TOP,.39,.7);cornice(b,faces,SHAFT_TOP,.465,1.1);
+  // Bell stage: four open arches with low balustrades, paired pink colonnettes at the corners, a real bell inside.
   const bhw=2.45,bell=square(bhw);
   bell.forEach(f=>{
     courses(b,f,{y0:BELL_BASE,y1:BELL_TOP,block:.9,voids:[arch(bhw,1.7,BELL_BASE+.5,BELL_TOP-.35)],material:()=>"marble",start:T.bell});
     archRing(b,f,bhw,BELL_TOP-.35-.85,.86,1.1,.72,.02,"marble",.60,11,.92);
     b.box([2.2,.2,.75],f.at(bhw,BELL_BASE+.4,.06),"marble",.49,{r:f.rot(),shade:.95});
+    b.box([1.7,.08,.16],f.at(bhw,BELL_BASE+1.3,.02),"marble",.61,{r:f.rot(),shade:.96});
+    for(const dx of[-.55,-.18,.18,.55])b.cylinder(.05,.06,.7,f.at(bhw+dx,BELL_BASE+.9,.02),"marble",.612,{shade:.95});
   });
-  for(const dx of[-1,1])for(const dz of[-1,1])b.box([.7,BELL_TOP-BELL_BASE,.7],[cx+dx*bhw,(BELL_BASE+BELL_TOP)/2,cz+dz*bhw],"marble",T.bell(23),{shade:1.03,duration:.03,lift:1});
+  for(const dx of[-1,1])for(const dz of[-1,1]){
+    b.box([.7,BELL_TOP-BELL_BASE,.7],[cx+dx*bhw,(BELL_BASE+BELL_TOP)/2,cz+dz*bhw],"marble",T.bell(23),{shade:1.03,duration:.03,lift:1});
+    colonnette(b,[cx+dx*(bhw+.2),BELL_BASE,cz+dz*(bhw-.55)],BELL_TOP-BELL_BASE-.1,.17,.585);
+    colonnette(b,[cx+dx*(bhw-.55),BELL_BASE,cz+dz*(bhw+.2)],BELL_TOP-BELL_BASE-.1,.17,.585);
+  }
   b.box([.3,.3,bhw*2-.5],[cx,BELL_TOP-.55,cz],"wood",.60);
   b.cylinder(.02,.02,.5,[cx,BELL_TOP-1.05,cz],"iron",.605);
   b.cylinder(.34,.58,.75,[cx,BELL_TOP-1.65,cz],"gold",.607,{shade:.85});
@@ -400,41 +416,69 @@ function tower(b:HeritageBuilder,sign:number){
   cornice(b,bell,BELL_TOP,.61);
   // Balustrade with corner pedestals and angels on the two front corners.
   const rhw=2.65;
-  for(const f of square(rhw)){
-    b.box([f.len+.3,.12,.3],f.at(f.len/2,DRUM_BASE+.1),"marble",.63,{r:f.rot(),shade:.96});
-    b.box([f.len+.3,.15,.34],f.at(f.len/2,DRUM_BASE+.9),"marble",.64,{r:f.rot(),shade:1.02});
-    for(let s=.45;s<f.len-.3;s+=.4)b.cylinder(.06,.09,.68,f.at(s,DRUM_BASE+.5),"marble",.634,{shade:.95});
-  }
+  for(const f of square(rhw))balustrade(b,f,DRUM_BASE+.04,.63,.85);
   for(const dx of[-1,1])for(const dz of[-1,1]){
     b.box([.55,1.15,.55],[cx+dx*rhw,DRUM_BASE+.6,cz+dz*rhw],"marble",.63,{shade:1.02});
     if(dz>0)angel(b,[cx+dx*rhw,DRUM_BASE+1.17,cz+dz*rhw],0,.955,.8);
   }
-  // Octagonal drum with eight small arches and corner colonnettes.
-  const R=1.95,half=R*Math.tan(Math.PI/8),drum:Wall[]=[];
-  for(let i=0;i<8;i++){
-    const th=i*Math.PI/4,c=[cx+R*Math.sin(th),cz+R*Math.cos(th)],d=[Math.cos(th),-Math.sin(th)];
-    const f=new Wall([c[0]-d[0]*half,0,c[1]-d[1]*half],[c[0]+d[0]*half,0,c[1]+d[1]*half]);drum.push(f);
-    courses(b,f,{y0:DRUM_BASE,y1:DRUM_TOP,thick:.5,course:.26,block:.7,voids:[arch(half,.85,DRUM_BASE+.5,DRUM_TOP-.35)],material:()=>"marble",start:T.drum});
-    const ca=th+Math.PI/8,cr=R/Math.cos(Math.PI/8);
-    b.cylinder(.15,.17,DRUM_TOP-DRUM_BASE,[cx+cr*Math.sin(ca),(DRUM_BASE+DRUM_TOP)/2,cz+cr*Math.cos(ca)],"stone",T.drum(27),{shade:1.05,duration:.02,lift:1});
-  }
-  cornice(b,drum,DRUM_TOP,.70,.7);
-  // Ogee dome in eight segments, stone ribs, lantern, orb and cross.
+  // Round tempietto: stepped plinth, closed core, eight pink colonnettes, entablature ring.
+  b.cylinder(2.05,2.15,.3,[cx,DRUM_BASE+.15,cz],"marble",.64,{shade:1.02,duration:.02,lift:1});
+  b.cylinder(1.25,1.25,TEMPIETTO_H,[cx,DRUM_BASE+.3+TEMPIETTO_H/2,cz],"marble",.65,{shade:.94,duration:.03,lift:1.5});
+  for(let i=0;i<8;i++){const a=i*Math.PI/4+Math.PI/8;colonnette(b,[cx+Math.sin(a)*1.72,DRUM_BASE+.3,cz+Math.cos(a)*1.72],TEMPIETTO_H,.17,.66+i*.005);}
+  const entY=DRUM_BASE+.3+TEMPIETTO_H;
+  b.cylinder(2.05,2.05,.4,[cx,entY+.2,cz],"marble",.71,{shade:.98,duration:.02,lift:.8});
+  b.cylinder(2.3,2.1,.25,[cx,entY+.525,cz],"marble",.715,{shade:1.03,duration:.02,lift:.8});
+  // Dome in eight segments with stone ribs, then orb and slender pinnacle.
   const profile:THREE.Vector2[]=[];
-  for(let k=0;k<=14;k++){const t=k/14;profile.push(new THREE.Vector2(2.05*Math.pow(Math.cos(t*Math.PI/2),.85)*(1+.14*Math.sin(t*Math.PI))+.002,t*2.9));}
+  for(let k=0;k<=14;k++){const t=k/14;profile.push(new THREE.Vector2(2.0*Math.pow(Math.cos(t*Math.PI/2),.9)*(1+.07*Math.sin(t*Math.PI))+.002,t*2.4));}
   for(let i=0;i<8;i++){const g=new THREE.LatheGeometry(profile,4,i*Math.PI/4,Math.PI/4);b.add(g,"marble",.72+i*.007,{p:[cx,DOME_BASE,cz],shade:.97,duration:.02,lift:1.2});g.dispose();}
   for(let i=0;i<8;i++){
     const a=i*Math.PI/4,pts:Point[]=[];
-    for(let k=0;k<=8;k++){const t=k/8,r=2.05*Math.pow(Math.cos(t*Math.PI/2),.85)*(1+.14*Math.sin(t*Math.PI))+.03;pts.push([cx+Math.sin(a)*r,DOME_BASE+t*2.9,cz+Math.cos(a)*r]);}
-    b.tube(pts,.07,"stone",.78+i*.002,{shade:.85},10);
+    for(let k=0;k<=8;k++){const t=k/8,r=2.0*Math.pow(Math.cos(t*Math.PI/2),.9)*(1+.07*Math.sin(t*Math.PI))+.03;pts.push([cx+Math.sin(a)*r,DOME_BASE+t*2.4,cz+Math.cos(a)*r]);}
+    b.tube(pts,.06,"stone",.78+i*.002,{shade:.9},10);
   }
-  const lanternY=DOME_BASE+2.9;
-  b.cylinder(.55,.64,.3,[cx,lanternY+.15,cz],"marble",.80,{shade:1.02});
-  for(let i=0;i<8;i++){const a=i*Math.PI/4;b.cylinder(.06,.07,1,[cx+Math.sin(a)*.45,lanternY+.8,cz+Math.cos(a)*.45],"marble",.81+i*.001,{duration:.01,lift:.5});}
-  b.cylinder(.6,.6,.12,[cx,lanternY+1.36,cz],"marble",.82,{shade:1.02});
-  b.sphere([cx,lanternY+1.45,cz],[.6,.42,.6],"marble",.825,{shade:.9});
-  b.sphere([cx,lanternY+1.98,cz],[.14,.14,.14],"gold",.83);
-  cross(b,[cx,lanternY+2.08,cz],.9,.965);
+  const top=DOME_BASE+2.4;
+  b.cylinder(.32,.4,.25,[cx,top+.12,cz],"marble",.80,{shade:1.02});
+  b.sphere([cx,top+.42,cz],[.22,.22,.22],"marble",.805,{shade:1.05});
+  b.cylinder(.035,.06,1.9,[cx,top+1.5,cz],"iron",.81,{duration:.01,lift:.6});
+  b.sphere([cx,top+2.5,cz],[.11,.11,.11],"gold",.82);
+  b.cylinder(.012,.025,.6,[cx,top+2.85,cz],"iron",.822,{duration:.01,lift:.4});
+}
+function annex(b:HeritageBuilder){
+  // Lower chapel wing on the left flank: three visible walls, its own gable roof, arched windows.
+  const outer=new Wall([-ANNEX_X,0,ANNEX_Z0],[-ANNEX_X,0,ANNEX_Z1]);
+  const front=new Wall([-ANNEX_X,0,ANNEX_Z1],[-WALL_X,0,ANNEX_Z1]);
+  const rear=new Wall([-WALL_X,0,ANNEX_Z0],[-ANNEX_X,0,ANNEX_Z0]);
+  const ridgeX=-(ANNEX_X+WALL_X)/2,halfSpan=(ANNEX_X-WALL_X)/2+.5,eaveY=ANNEX_TOP+.72-.15,ridgeY=eaveY+halfSpan*.42;
+  const gable=(w:Wall)=>(y:number):[number,number]|null=>{
+    if(y<ANNEX_TOP)return[0,w.len];
+    const hw=Math.max(0,(halfSpan-.4)*(1-(y-eaveY)/(ridgeY-eaveY)));if(hw<.3)return null;
+    const c=w.len/2;return[c-hw,c+hw];
+  };
+  const zs=[-10,-6,-2,2,6,10];
+  courses(b,outer,{y0:0,y1:PLINTH,course:.4,block:1.3,material:()=>"stone",start:T.mason,shade:.9});
+  courses(b,outer,{y0:PLINTH,y1:ANNEX_TOP,voids:zs.map(z=>arch(z-ANNEX_Z0,1.3,2.8,6.4)),material:()=>"marble",start:T.mason});
+  for(const z of zs)archWindow(b,outer,z-ANNEX_Z0,1.3,2.8,6.4,.30);
+  for(const z of[-12,-8,-4,0,4,8,12])for(let k=0;k<3;k++){const y=PLINTH+1.2+k*2.4;b.box([.6,2.35,.3],outer.at(z-ANNEX_Z0,y,.28),"marble",T.mason(y),{r:outer.rot(),shade:1.03});}
+  for(const w of[front,rear]){
+    courses(b,w,{y0:0,y1:PLINTH,course:.4,block:1.3,material:()=>"stone",start:T.mason,shade:.9});
+    courses(b,w,{y0:PLINTH,y1:ridgeY-.2,extent:gable(w),material:()=>"marble",start:T.mason});
+  }
+  cornice(b,[outer,front,rear],ANNEX_TOP,.25,.8);
+  gableRoof(b,ridgeX,halfSpan,eaveY,ridgeY,ANNEX_Z0-.4,ANNEX_Z1+.4,3,.30,false);
+  // Arcaded gallery in front of the wing, flat roof with a parapet.
+  const gFront=new Wall([-GALLERY_X,0,GALLERY_Z],[-WALL_X-.75,0,GALLERY_Z]);
+  const gOuter=new Wall([-GALLERY_X,0,ANNEX_Z1],[-GALLERY_X,0,GALLERY_Z]);
+  const arcades:[Wall,number[]][]=[[gFront,[1.3,3.7]],[gOuter,[1.6,3.9,6.2,8.4]]];
+  for(const [w,ss]of arcades){
+    courses(b,w,{y0:0,y1:PLINTH,course:.4,block:1.3,material:()=>"stone",start:T.mason,shade:.9});
+    courses(b,w,{y0:PLINTH,y1:GALLERY_TOP,block:.8,voids:ss.map(s=>arch(s,1.4,PLINTH,4.6)),material:()=>"marble",start:T.mason});
+    for(const s of ss)archRing(b,w,s,4.6-.7,.71,.92,.7,.04,"marble",.19);
+  }
+  b.box([GALLERY_X-WALL_X+.3,.45,GALLERY_Z-ANNEX_Z1+.3],[-(GALLERY_X+WALL_X)/2+.1,GALLERY_TOP+.225,(GALLERY_Z+ANNEX_Z1)/2],"marble",.21,{duration:.02,lift:.8,shade:.98});
+  cornice(b,[gFront,gOuter],GALLERY_TOP-.05,.20,.7);
+  balustrade(b,new Wall([-GALLERY_X-.2,0,GALLERY_Z+.2],[-WALL_X-.7,0,GALLERY_Z+.2]),GALLERY_TOP+.45,.23,.8);
+  balustrade(b,new Wall([-GALLERY_X-.2,0,ANNEX_Z1-.2],[-GALLERY_X-.2,0,GALLERY_Z+.2]),GALLERY_TOP+.45,.23,.8);
 }
 
 export function buildArchitecture(b:HeritageBuilder){
@@ -442,13 +486,14 @@ export function buildArchitecture(b:HeritageBuilder){
   b.box([22.4,1.15,40.6],[0,.575,0],"stone",.02,{lift:.4,duration:.03,shade:.95});
   b.box([12.6,1.15,4.4],[0,.575,22.2],"stone",.03,{lift:.4,duration:.03,shade:.95});
   b.cylinder(6,6,1.15,[0,.575,REAR],"stone",.02,{lift:.4,duration:.03,shade:.95});
+  b.box([ANNEX_X-WALL_X+.4,1.15,ANNEX_Z1-ANNEX_Z0],[-(ANNEX_X+WALL_X)/2,.575,(ANNEX_Z0+ANNEX_Z1)/2],"stone",.02,{lift:.4,duration:.03,shade:.95});
+  b.box([GALLERY_X-WALL_X,1.15,GALLERY_Z-ANNEX_Z1],[-(GALLERY_X+WALL_X)/2,.575,(GALLERY_Z+ANNEX_Z1)/2],"stone",.02,{lift:.4,duration:.03,shade:.95});
   colonnade(b);
-  aisleWalls(b);
-  naveWalls(b);
+  sideWalls(b);
   rearAndApse(b);
   facade(b);
   portico(b);
-  aisleRoofs(b);
-  naveRoof(b);
+  mainRoof(b);
+  annex(b);
   for(const sign of[-1,1])tower(b,sign);
 }
