@@ -156,6 +156,9 @@ export default function App() {
               <button key={id} aria-pressed={locale === id} onClick={() => setLocale(id)}>{label}</button>
             ))}
           </nav>
+          <button className="privacy-button" type="button" aria-label={t.privacy} title={t.privacy} onClick={() => document.querySelector<HTMLButtonElement>(".rr-privacy--floating")?.click()}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2 19 6v5.1c0 4.7-2.9 8-7 9.7-4.1-1.7-7-5-7-9.7V6l7-2.8Z"/><path d="M9.4 11.7a2.6 2.6 0 1 1 3.9 2.3v1.3h-2.6V14a2.6 2.6 0 0 1-1.3-2.3Z"/></svg>
+          </button>
           <button className="info-button" aria-label={t.info} title={t.info} onClick={() => setInfoOpen(true)}>i</button>
           <button className="rebuild-button" aria-label={t.rebuild} disabled={!ready} onClick={replay}><span className="rebuild-label">{t.rebuild}</span><span className="rebuild-icon" aria-hidden="true">↺</span></button>
         </div>

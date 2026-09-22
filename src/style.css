@@ -69,6 +69,11 @@ header button {
 .cirio-countdown { display:flex; align-items:center; gap:7px; color:var(--red); text-decoration:none; white-space:nowrap; }
 .countdown-label { font:600 8px/1 Arial,sans-serif; letter-spacing:.12em; }
 .info-button { display:grid; place-items:center; width:23px; height:23px; padding:0; border:1px solid var(--line); border-radius:50%; color:var(--red); font:italic 15px/1 Georgia,serif; letter-spacing:0; }
+.privacy-button { display:grid; place-items:center; width:23px; height:23px; padding:3px; border:1px solid var(--line); border-radius:50%; color:var(--red); background:transparent; cursor:pointer; }
+.privacy-button svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.25; stroke-linecap:round; stroke-linejoin:round; }
+.privacy-button:hover { color:#5d3025; }
+.poster[data-night="true"] .privacy-button:hover { color:#f2c875; }
+body > .rr-privacy--floating { display:none !important; }
 .info-button:hover,.cirio-countdown:hover { color:#5d3025; }
 .poster[data-night="true"] .info-button:hover,.poster[data-night="true"] .cirio-countdown:hover { color:#f2c875; }
 .theme-toggle { position:relative; display:grid; place-items:center; width:28px; height:28px; padding:0; border:1px solid var(--line); border-radius:50%; color:var(--red); background:transparent; overflow:hidden; transition:color .4s, border-color .4s, background .4s; }
@@ -228,7 +233,7 @@ footer time { text-align: right; font: 700 9px/1 Arial,sans-serif; letter-spacin
   .header-actions { gap: 9px; }
   .cirio-countdown { gap:4px; }
   .countdown-label { font-size:7px; letter-spacing:.08em; }
-  .info-button { width:21px; height:21px; }
+  .info-button, .privacy-button { width:21px; height:21px; }
   .theme-toggle { width:25px; height:25px; }
   .theme-icon { width:14px; height:14px; }
   .language-selector { gap: 7px; padding-right: 9px; }
@@ -252,7 +257,7 @@ footer time { text-align: right; font: 700 9px/1 Arial,sans-serif; letter-spacin
   .header-actions { gap:6px; }
   .countdown-label { font-size:6px; letter-spacing:.04em; }
   .language-selector { gap:5px; padding-right:6px; }
-  .info-button { width:20px; height:20px; }
+  .info-button, .privacy-button { width:20px; height:20px; }
   .rebuild-button { width:23px; height:23px; padding:0; border:1px solid var(--line); border-radius:50%; display:grid; place-items:center; }
   .rebuild-label { display:none; }
   .rebuild-icon { display:block; font:18px/1 Georgia,serif; }
