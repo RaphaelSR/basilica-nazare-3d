@@ -50,7 +50,11 @@ header button {
   letter-spacing: .13em;
   cursor: pointer;
 }
-.header-actions { justify-self: end; display: flex; align-items: center; gap: 18px; }
+.header-actions { justify-self: end; display: flex; align-items: center; gap: 15px; }
+.cirio-countdown { display:flex; align-items:center; gap:7px; color:var(--red); text-decoration:none; white-space:nowrap; }
+.countdown-label { font:600 8px/1 Arial,sans-serif; letter-spacing:.12em; }
+.info-button { display:grid; place-items:center; width:23px; height:23px; padding:0; border:1px solid var(--line); border-radius:50%; color:var(--red); font:italic 15px/1 Georgia,serif; letter-spacing:0; }
+.info-button:hover,.cirio-countdown:hover { color:#5d3025; }
 .language-selector { display: flex; align-items: center; gap: 8px; padding-right: 17px; border-right: 1px solid var(--line); }
 .language-selector button {
   border: 0;
@@ -163,6 +167,20 @@ footer {
 .timeline span { position: absolute; inset: 0 auto 0 0; background: var(--red); }
 .timeline input { position: absolute; inset: -12px 0; width: 100%; margin: 0; opacity: 0; cursor: ew-resize; }
 footer time { text-align: right; font: 700 9px/1 Arial,sans-serif; letter-spacing: .1em; }
+.download-video { display:flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:20px; background:transparent; padding:8px 11px; color:var(--ink); font:600 8px/1 Arial,sans-serif; letter-spacing:.08em; white-space:nowrap; cursor:pointer; }
+.download-video span:first-child { color:var(--red); font:18px/10px Arial,sans-serif; }
+.download-video:disabled { opacity:.55; cursor:wait; }
+.video-status { position:fixed; z-index:9; bottom:82px; left:50%; transform:translateX(-50%); padding:9px 15px; background:#423e33; color:#f4f1e9; border-radius:30px; font:600 10px/1 Arial,sans-serif; letter-spacing:.1em; white-space:nowrap; }
+.video-error { background:#7f3026; }
+.info-dialog { width:min(520px,calc(100vw - 32px)); max-height:calc(100svh - 40px); overflow:auto; position:fixed; inset:0; margin:auto; padding:38px 42px 34px; border:1px solid rgba(76,65,43,.22); background:#f4f1e9; color:var(--ink); box-shadow:0 20px 80px rgba(38,32,20,.2); }
+.info-dialog::backdrop { background:rgba(35,32,26,.44); backdrop-filter:blur(3px); }
+.dialog-close { position:absolute; top:14px; right:18px; padding:0 2px; border:0; background:transparent; color:var(--red); font:28px/1 Georgia,serif; cursor:pointer; }
+.dialog-eyebrow { margin:0 0 14px; color:var(--red); font:600 8px/1.5 Arial,sans-serif; letter-spacing:.18em; }
+.info-dialog h2 { margin:0 0 14px; font:400 clamp(25px,4vw,36px)/1.2 Georgia,serif; }
+.dialog-intro { color:#898171; font:italic 14px/1.7 Georgia,serif; }
+.info-dialog ul { margin:24px 0; padding:0; list-style:none; }
+.info-dialog li { padding:13px 0; border-top:1px solid var(--line); font:15px/1.65 Georgia,serif; }
+.source-link { display:inline-block; color:var(--red); font:600 9px/1.5 Arial,sans-serif; letter-spacing:.12em; text-decoration:none; border-bottom:1px solid currentColor; padding-bottom:4px; }
 
 @media (max-width: 900px) {
   .poster { min-height: 0; grid-template-rows: 48px 1fr 58px; }
@@ -170,14 +188,21 @@ footer time { text-align: right; font: 700 9px/1 Arial,sans-serif; letter-spacin
   header small { display: none; }
   header > span { font-size: 21px; }
   .wordmark em { display:none; }
-  .header-actions { gap: 10px; }
+  .header-actions { gap: 9px; }
+  .cirio-countdown { gap:4px; }
+  .countdown-label { font-size:7px; letter-spacing:.08em; }
+  .info-button { width:21px; height:21px; }
   .language-selector { gap: 7px; padding-right: 9px; }
   .scene { grid-template-columns: 1fr; padding: 0; }
   .brief, .title-block { display: none; }
   .tower-stage { min-height: 0; }
   .three-scene { inset: 0 -3% 6%; }
   .stage-label { top:10px; }
-  footer { margin: 0 16px; grid-template-columns: 34px 1fr 83px; }
+  footer { margin: 0 16px; grid-template-columns: 34px 1fr auto auto; gap:8px; }
+  footer time { font-size:8px; }
+  .download-video { padding:7px 8px; }
+  .download-label { display:none; }
+  .info-dialog { padding:34px 24px 26px; }
 }
 
 @media (max-height: 720px) and (min-width: 901px) {

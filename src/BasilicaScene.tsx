@@ -5,16 +5,20 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 import { createHeritageMaterials } from "./heritage/materials";
 import { HeritageBuilder } from "./heritage/builder";
 import { buildArchitecture, courtyard } from "./heritage/architecture";
+import type { VideoCopy } from "./heritage/export-video";
 
 export type DetailView="overview"|"towers"|"portico"|"rear";
-type Props={progress:number;view?:DetailView;onReady?:()=>void;label?:string};
+type VideoExporter=(copy:VideoCopy,onProgress:(progress:number)=>void)=>Promise<Blob>;
+type Props={progress:number;view?:DetailView;onReady?:()=>void;label?:string;onVideoExportReady?:(exporter:VideoExporter)=>void};
 
-export default function BasilicaScene({progress,view="overview",onReady,label="Animação 3D orbitável da construção da Basílica de Nazaré"}:Props){
+export default function BasilicaScene({progress,view="overview",onReady,label="Animação 3D orbitável da construção da Basílica de Nazaré",onVideoExportReady}:Props){
   const mountRef=useRef<HTMLDivElement>(null);
   const progressRef=useRef(progress),viewRef=useRef(view),readyRef=useRef(onReady);
+  const exportReadyRef=useRef(onVideoExportReady);
   useEffect(()=>{progressRef.current=progress;},[progress]);
   useEffect(()=>{viewRef.current=view;},[view]);
   useEffect(()=>{readyRef.current=onReady;},[onReady]);
+  useEffect(()=>{exportReadyRef.current=onVideoExportReady;},[onVideoExportReady]);
   useEffect(()=>{
     const mount=mountRef.current;if(!mount)return;
     const scene=new THREE.Scene();
@@ -100,6 +104,10 @@ export default function BasilicaScene({progress,view="overview",onReady,label="A
       raf=requestAnimationFrame(render);
     };
     raf=requestAnimationFrame(render);readyRef.current?.();
+    exportReadyRef.current?.(async(copy,onProgress)=>{
+      const {exportVerticalVideo}=await import("./heritage/export-video");
+      return exportVerticalVideo(scene,copy,onProgress);
+    });
     return()=>{
       cancelAnimationFrame(raf);ro.disconnect();controls.removeEventListener("start",interrupt);controls.dispose();
       builder.dispose();materialKit.dispose();environment.dispose();
