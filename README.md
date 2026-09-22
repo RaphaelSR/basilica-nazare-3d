@@ -1,6 +1,6 @@
 # Basílica de Nazaré · Construção 3D
 
-**Site:** [raphaelsr.github.io/basilica-nazare-3d](https://raphaelsr.github.io/basilica-nazare-3d/)
+**Site:** [basilica.raphaelrocha.com](https://basilica.raphaelrocha.com/)
 
 Miniatura procedural da Basílica Santuário de Nossa Senhora de Nazaré, em Belém (PA), que se constrói em tempo real. A experiência apresenta embasamento de granito, colunata interna, alvenaria em fiadas, telhados de barro, transepto, coro e ábside, pórtico de granito rosa, frontão dourado e dois campanários com relógios, sinos, templetes e cúpulas.
 
