@@ -6,10 +6,10 @@ import { createHeritageMaterials } from "./heritage/materials";
 import { HeritageBuilder } from "./heritage/builder";
 import { buildArchitecture, courtyard } from "./heritage/architecture";
 
-export type DetailView="overview"|"towers"|"portico";
-type Props={progress:number;view?:DetailView;onReady?:()=>void};
+export type DetailView="overview"|"towers"|"portico"|"rear";
+type Props={progress:number;view?:DetailView;onReady?:()=>void;label?:string};
 
-export default function BasilicaScene({progress,view="overview",onReady}:Props){
+export default function BasilicaScene({progress,view="overview",onReady,label="Animação 3D orbitável da construção da Basílica de Nazaré"}:Props){
   const mountRef=useRef<HTMLDivElement>(null);
   const progressRef=useRef(progress),viewRef=useRef(view),readyRef=useRef(onReady);
   useEffect(()=>{progressRef.current=progress;},[progress]);
@@ -19,18 +19,18 @@ export default function BasilicaScene({progress,view="overview",onReady}:Props){
     const mount=mountRef.current;if(!mount)return;
     const scene=new THREE.Scene();
     const camera=new THREE.PerspectiveCamera(34,1,.1,260);
-    camera.position.set(56,30,64);
+    camera.position.set(59,34,70);
     const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:"high-performance"});
     renderer.setPixelRatio(Math.min(devicePixelRatio,window.innerWidth<700?1.5:2));
     renderer.setClearColor(0xf4f1e9,0);
     renderer.outputColorSpace=THREE.SRGBColorSpace;
     renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
-    renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+    renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
     // Camera movement does not change a directional light's shadow map.
     renderer.shadowMap.autoUpdate=false;
     mount.appendChild(renderer.domElement);
     const room=new RoomEnvironment(),pmrem=new THREE.PMREMGenerator(renderer);
-    const environment=pmrem.fromScene(room,.06);scene.environment=environment.texture;scene.environmentIntensity=.32;
+    const environment=pmrem.fromScene(room,.035);scene.environment=environment.texture;scene.environmentIntensity=.32;
     room.dispose();pmrem.dispose();
     scene.add(new THREE.HemisphereLight(0xfaf7ef,0x706a5c,.72));
     // Equatorial afternoon sun from the south-west lights the facade and the right flank.
@@ -42,16 +42,17 @@ export default function BasilicaScene({progress,view="overview",onReady}:Props){
     const fill=new THREE.DirectionalLight(0xe5eced,.55);fill.position.set(40,22,-20);scene.add(fill);
     const rim=new THREE.DirectionalLight(0xfff4de,.7);rim.position.set(-18,36,-40);scene.add(rim);
     const controls=new OrbitControls(camera,renderer.domElement);
-    controls.target.set(0,11,-1);controls.enableDamping=true;controls.dampingFactor=.075;
+    controls.target.set(0,14,0);controls.enableDamping=true;controls.dampingFactor=.075;
     controls.enablePan=true;controls.minDistance=10;controls.maxDistance=150;
     controls.minPolarAngle=.3;controls.maxPolarAngle=Math.PI*.51;
     const materialKit=createHeritageMaterials(renderer),builder=new HeritageBuilder(materialKit.materials);
     courtyard(builder);buildArchitecture(builder);builder.finish(scene);
     const reducedMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const presets={
-      overview:{position:new THREE.Vector3(56,30,64),target:new THREE.Vector3(0,11,-1)},
-      towers:{position:new THREE.Vector3(17,34,31),target:new THREE.Vector3(8.95,29,19.6)},
-      portico:{position:new THREE.Vector3(9,9.5,44),target:new THREE.Vector3(0,11,21)},
+      overview:{position:new THREE.Vector3(59,34,70),target:new THREE.Vector3(0,14,0)},
+      towers:{position:new THREE.Vector3(23.5,36,45),target:new THREE.Vector3(8.95,29.5,19.6)},
+      portico:{position:new THREE.Vector3(7.5,14,61),target:new THREE.Vector3(0,11.6,21)},
+      rear:{position:new THREE.Vector3(26,30,-53),target:new THREE.Vector3(0,10.5,-18.8)},
     };
     let lastView:DetailView="overview",transition=false,raf=0,lastNow=performance.now(),frames=0,elapsed=0;
     let needsFrame=true,lastProgress=-2,lastShadowProgress=-2,lastShadowTime=-Infinity;
@@ -60,7 +61,8 @@ export default function BasilicaScene({progress,view="overview",onReady}:Props){
     const resize=()=>{
       const w=Math.max(1,mount.clientWidth),h=Math.max(1,mount.clientHeight);
       renderer.setSize(w,h,false);camera.aspect=w/h;
-      camera.fov=camera.aspect<.58?40:34;camera.updateProjectionMatrix();
+      camera.fov=THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(34)/2)*Math.max(1,1.2/camera.aspect)));
+      camera.updateProjectionMatrix();
       needsFrame=true;
     };
     const ro=new ResizeObserver(resize);ro.observe(mount);resize();
@@ -74,7 +76,7 @@ export default function BasilicaScene({progress,view="overview",onReady}:Props){
       if(transition){
         const preset=presets[lastView],amount=reducedMotion?1:1-Math.exp(-dt*5);
         camera.position.lerp(preset.position,amount);controls.target.lerp(preset.target,amount);
-        if(camera.position.distanceTo(preset.position)<.02)transition=false;
+        if(camera.position.distanceTo(preset.position)<.02){camera.position.copy(preset.position);controls.target.copy(preset.target);transition=false;}
       }
       const cameraChanged=controls.update();
       const progressChanged=lastProgress!==progressRef.current;
@@ -104,5 +106,5 @@ export default function BasilicaScene({progress,view="overview",onReady}:Props){
       key.shadow.map?.dispose();renderer.dispose();renderer.domElement.remove();
     };
   },[]);
-  return <div ref={mountRef} className="three-scene" aria-label="Animação 3D orbitável da construção da Basílica de Nazaré" />;
+  return <div ref={mountRef} className="three-scene" aria-label={label} />;
 }

@@ -1,6 +1,8 @@
 # Basílica de Nazaré · Construção 3D
 
-Miniatura procedural da Basílica Santuário de Nossa Senhora de Nazaré (Belém, PA) que se constrói sozinha: embasamento de granito, faixas de mármore cinza-esverdeado e branco, colunata interna, alvenaria em fiadas, naves laterais baixas com terraços planos e parapeitos, clerestório recuado sob o telhado de barro, transepto de largura total com telhado em cruz, coro e ábside, pórtico de granito rosa, frontão dourado, dois campanários com relógios, sinos, templetes redondos de colunas rosa e cúpulas. Proporções medidas na vista de satélite (24 m de largura, torres de 42 m). Tudo é geometria procedural em Three.js, sem modelos externos e sem chaves de API.
+Miniatura procedural da Basílica Santuário de Nossa Senhora de Nazaré, em Belém (PA), que se constrói em tempo real. A experiência apresenta embasamento de granito, colunata interna, alvenaria em fiadas, telhados de barro, transepto, coro e ábside, pórtico de granito rosa, frontão dourado e dois campanários com relógios, sinos, templetes e cúpulas.
+
+Toda a arquitetura é gerada com Three.js, sem modelos externos ou chaves de API. As proporções principais foram medidas na vista de satélite: 24 m de largura e torres de 42 m.
 
 É uma interpretação estilizada a partir de fotos e do Google Maps 3D, não uma reconstrução métrica.
 
@@ -15,16 +17,25 @@ npm run build      # tsc --noEmit + vite build
 npm run preview
 ```
 
-Controles: arraste para orbitar, rolagem para aproximar, linha do tempo para avançar/retroceder a obra, botões **Campanários** e **Pórtico e frontão** para câmeras de detalhe.
+## Recursos
+
+- construção arquitetônica contínua com linha do tempo interativa;
+- órbita e zoom livres;
+- vistas de detalhe da fachada, campanários e fundos;
+- interface em português, espanhol e inglês;
+- materiais, texturas e geometria totalmente procedurais.
+
+Use o mouse ou toque para orbitar, a rolagem para aproximar e a linha do tempo para avançar ou retroceder a obra. Os botões abaixo da miniatura selecionam câmeras de detalhe.
 
 ## Onde mexer
 
 | Arquivo | Para |
 | --- | --- |
-| `src/heritage/architecture.ts` | toda a geometria e a linha do tempo (constantes de projeto no topo, `T.mason/bell/drum` para o ritmo) |
+| `src/heritage/architecture.ts` | geometria e linha do tempo da construção |
 | `src/heritage/materials.ts` | paleta e texturas procedurais (mármore, granito, telha, madeira, dourado, ferro) |
 | `src/heritage/builder.ts` | batching por material e animação de montagem no shader (color e depth compartilham o mesmo deslocamento) |
 | `src/BasilicaScene.tsx` | luzes, câmeras, OrbitControls, cache de sombras e render sob demanda |
-| `src/App.tsx` | timeline, rótulos de etapa e botões de vista |
+| `src/App.tsx` | interface, linha do tempo e botões de vista |
+| `src/i18n.ts` | textos em português, espanhol e inglês |
 
 Gerado com a skill `threejs-architecture-effects` (MIT).

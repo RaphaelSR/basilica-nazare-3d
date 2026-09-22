@@ -7,8 +7,8 @@ export type SurfaceName = "marble" | "stone" | "granite" | "tile" | "wood" | "go
 export function createHeritageMaterials(renderer: THREE.WebGLRenderer) {
   const textures: THREE.Texture[] = [];
   const palette: Record<SurfaceName, string> = {
-    marble: "#e6e0d3", stone: "#858b84", granite: "#b58e80", tile: "#b0603a", wood: "#4d3323",
-    gold: "#b48d3c", iron: "#3a3835", recess: "#2a2622", moss: "#4a6b3a", glass: "#b6c8c3",
+    marble: "#e8e3d8", stone: "#858b84", granite: "#b9897c", tile: "#ab603e", wood: "#513724",
+    gold: "#c6a34d", iron: "#3a3835", recess: "#2a2622", moss: "#4a6b3a", glass: "#b6c8c3",
   };
   const output = {} as Record<SurfaceName, THREE.MeshStandardMaterial>;
   for (const [name, base] of Object.entries(palette) as [SurfaceName, string][]) {
@@ -44,13 +44,32 @@ export function createHeritageMaterials(renderer: THREE.WebGLRenderer) {
         ctx.stroke();
       }
     }
+    if(name === "wood"){
+      for(let k=0;k<4;k++){
+        const x=70+rand()*370,y=rand()*size;
+        for(let i=0;i<7;i++){
+          ctx.strokeStyle=`rgba(26,16,9,${.12-i*.012})`;ctx.lineWidth=.8;
+          ctx.beginPath();ctx.ellipse(x,y,2+i*2,5+i*6,.04,0,Math.PI*2);ctx.stroke();
+        }
+      }
+    }
     if (name === "marble") {
-      // Faint diagonal veins and thin rain runs; lime render, not polished stone.
-      for (let i = 0; i < 14; i++) {
-        let x = rand() * size, y = rand() * size, a = .6 + rand() * .5;
-        ctx.strokeStyle = "rgba(150,140,120,.10)"; ctx.lineWidth = .6 + rand() * .9; ctx.beginPath(); ctx.moveTo(x, y);
-        for (let k = 0; k < 14; k++) { a += (rand() - .5) * .5; x += Math.cos(a) * 18; y += Math.sin(a) * 18; ctx.lineTo(x, y); }
-        ctx.stroke();
+      for(let i=0;i<11;i++){
+        const x0=rand()*size*1.8-size*.4,phase=rand()*6;
+        const vein=(offset:number)=>{
+          ctx.beginPath();
+          for(let y=-10;y<=size+10;y+=5){
+            const x=x0+y*.46+Math.sin(y*.013+phase)*14+Math.sin(y*.051+phase)*3+offset;
+            if(y===-10)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+          }
+          ctx.stroke();
+        };
+        ctx.strokeStyle="rgba(128,126,114,.045)";ctx.lineWidth=7;vein(0);
+        ctx.strokeStyle="rgba(116,115,106,.12)";ctx.lineWidth=.7;vein(0);
+        ctx.strokeStyle="rgba(164,145,112,.055)";ctx.lineWidth=1.5;vein(2.5);
+        const y=rand()*size,x=x0+y*.46+Math.sin(y*.013+phase)*14;
+        ctx.strokeStyle="rgba(125,119,106,.075)";ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(x,y);
+        ctx.bezierCurveTo(x-9,y+20,x+8,y+38,x-12,y+72);ctx.stroke();
       }
       for(let i=0;i<30;i++){
         const x=rand()*size,w=2+rand()*14,h=30+rand()*160;
@@ -60,7 +79,7 @@ export function createHeritageMaterials(renderer: THREE.WebGLRenderer) {
     }
     if (name === "stone" || name === "granite") {
       // Granite: dense dark and pale flecks; the pink variety reads as polished columns.
-      for (let i = 0; i < 9000; i++) { ctx.fillStyle = rand() > .5 ? "rgba(40,40,42,.22)" : "rgba(235,225,214,.2)"; const s = .6 + rand() * 1.4; ctx.fillRect(rand() * size, rand() * size, s, s); }
+      for (let i = 0; i < 9000; i++) { ctx.fillStyle = rand() > .65 ? "rgba(52,45,47,.28)" : "rgba(244,220,208,.25)"; const s = .5 + rand() * 2.2; ctx.fillRect(rand() * size, rand() * size, s, s); }
     }
     for(let i=0;i<17000;i++){
       ctx.globalAlpha=name==="tile"?.25:1;
@@ -88,12 +107,15 @@ export function createHeritageMaterials(renderer: THREE.WebGLRenderer) {
     const rc=roughCanvas.getContext("2d")!;rc.fillStyle=name==="tile"?"#b4b4b4":name==="wood"?"#d4d4d4":name==="gold"?"#8a8a8a":"#ededed";rc.fillRect(0,0,256,256);
     for(let i=0;i<90;i++){rc.fillStyle=`rgba(60,60,60,${.02+rand()*.045})`;rc.fillRect(rand()*256,rand()*256,8+rand()*35,8+rand()*35);}
     const roughness=new THREE.CanvasTexture(roughCanvas);roughness.wrapS=roughness.wrapT=THREE.RepeatWrapping;textures.push(roughness);
-    output[name]=new THREE.MeshStandardMaterial({
+    const options:THREE.MeshStandardMaterialParameters={
       map:texture,bumpMap:bump,roughnessMap:roughness,
-      bumpScale:name==="marble"?.012:name==="tile"?.008:.024,
-      roughness:name==="gold"?.5:name==="granite"?.42:name==="iron"?.7:name==="tile"?.84:.95,
-      metalness:name==="gold"?.7:name==="iron"?.4:0,vertexColors:true,
-    });
+      bumpScale:name==="marble"?.006:name==="granite"?.008:name==="tile"?.01:.018,
+      roughness:name==="gold"?.56:name==="granite"?.36:name==="marble"?.78:name==="iron"?.7:name==="tile"?.88:.9,
+      metalness:name==="gold"?.68:name==="iron"?.4:0,vertexColors:true,
+    };
+    output[name]=name==="granite"
+      ?new THREE.MeshPhysicalMaterial({...options,clearcoat:.38,clearcoatRoughness:.24})
+      :new THREE.MeshStandardMaterial(options);
   }
   return {materials:output,dispose(){textures.forEach(t=>t.dispose());Object.values(output).forEach(m=>m.dispose());}};
 }

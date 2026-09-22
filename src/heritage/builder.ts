@@ -31,7 +31,13 @@ export class HeritageBuilder {
     const shade=options.shade??1,tint=options.tint??[1,1,1];
     // Per-piece atlas offsets remove identical grain on repeated masonry/wood.
     const uv=g.getAttribute("uv");
-    if(uv && material!=="glass"){
+    if(uv && material==="marble"){
+      const pos=g.getAttribute("position"),normal=g.getAttribute("normal");
+      for(let i=0;i<uv.count;i++){
+        const nx=Math.abs(normal.getX(i)),ny=Math.abs(normal.getY(i)),nz=Math.abs(normal.getZ(i));
+        uv.setXY(i,(nx>nz?pos.getZ(i):pos.getX(i))/5.5,(ny>.8?pos.getZ(i):pos.getY(i))/5.5);
+      }
+    }else if(uv && material!=="glass"){
       const offset=(Math.sin(this.pieces*127.1)*43758.5453)%1;
       for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)+offset,uv.getY(i)+offset*.731);
     }
@@ -60,6 +66,24 @@ export class HeritageBuilder {
       outline.lineTo(w/2-r,h/2-r);outline.lineTo(-w/2+r,h/2-r);outline.closePath();
       const g=new THREE.ExtrudeGeometry(outline,{depth:d-2*r,bevelEnabled:true,bevelThickness:r,bevelSize:r,bevelSegments:1,steps:1});
       g.translate(0,0,-d/2+r);return g;
+    });
+    this.add(geometry,material,start,{...options,p});
+  }
+  masonry(size:Point,p:Point,material:SurfaceName,start:number,options:Transform={}){
+    // Chamfer the exposed face; the sealed flat back keeps each block at 20 triangles.
+    const geometry=this.geo(`masonry:${size.join(",")}`,()=>{
+      const [w,h,d]=size,r=Math.min(...size)*.055,vertices:number[]=[],positions:number[]=[],uv:number[]=[];
+      for(const [inset,z]of[[0,-d/2],[0,d/2-r],[r,d/2]])
+        for(const [x,y]of[[-1,-1],[1,-1],[1,1],[-1,1]])vertices.push(x*(w/2-inset),y*(h/2-inset),z);
+      const face=(a:number,b:number,c:number,e:number)=>{
+        for(const [i,u,v]of[[a,0,0],[b,1,0],[c,1,1],[a,0,0],[c,1,1],[e,0,1]]){
+          positions.push(...vertices.slice(i*3,i*3+3));uv.push(u,v);
+        }
+      };
+      face(3,2,1,0);face(8,9,10,11);
+      for(let ring=0;ring<2;ring++)for(let i=0;i<4;i++)face(ring*4+i,ring*4+(i+1)%4,(ring+1)*4+(i+1)%4,(ring+1)*4+i);
+      const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(positions,3));
+      g.setAttribute("uv",new THREE.Float32BufferAttribute(uv,2));g.computeVertexNormals();return g;
     });
     this.add(geometry,material,start,{...options,p});
   }
