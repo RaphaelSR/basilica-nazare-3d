@@ -6,8 +6,7 @@ import type { SurfaceName } from "./materials";
 // neoclassical miniature: flat-roofed side aisles, a narrow set-back clerestory under
 // the tiled gable roof, a full-width transept with a cross gable, a short chancel and apse,
 // twin bell towers crowned by round colonnaded tempietti and domes, a pink-granite
-// portico, a gilded pediment, a semicircular apse, and the lower chapel wing with
-// on the left flank. Scene units (≈1.1 m); about 37 units tall.
+// portico, a gilded pediment and a small apse. Scene units (≈1.1 m); about 37 units tall.
 
 const TAU=Math.PI*2;
 const variation=(n:number)=>{const v=Math.sin(n*127.1+31.7)*43758.5453;return v-Math.floor(v);};
@@ -33,7 +32,6 @@ const AISLE_X=11, CLER_X=5.2, FRONT=20, TRANSEPT_Z0=-12.4, TRANSEPT_Z1=-20.4, RE
 const EAVE_X=5.8, EAVE_Y=17.05, RIDGE=EAVE_Y+EAVE_X*.42;
 const TOWER_X=8.95, TOWER_Z=19.6, TOWER_HW=2.8, SHAFT_TOP=22.5, BELL_BASE=23.3, BELL_TOP=27.4, DRUM_BASE=28.15;
 const TEMPIETTO_H=2.6, DOME_BASE=DRUM_BASE+.3+TEMPIETTO_H+.65;
-const ANNEX_X=16.5, ANNEX_TOP=8.4, ANNEX_Z0=2.5, ANNEX_Z1=15.5;
 const FRONT_S=(x:number)=>x+6.15;
 const gableHalfWidth=(y:number)=>y<EAVE_Y?CLER_X:Math.min(CLER_X,EAVE_X*(1-(y-EAVE_Y)/(RIDGE-EAVE_Y))-.2);
 const pedimentHalfWidth=(y:number)=>6.15*(1-(y-PED_BASE)/(PED_APEX-PED_BASE));
@@ -250,7 +248,6 @@ export function courtyard(b:HeritageBuilder){
   for(let i=-11;i<=11;i++)for(let j=-16;j<=13;j++){
     const x=i*3,z=j*3;
     if(Math.abs(x)<12.5&&z>-29&&z<24.5)continue;
-    if(x<-10&&x>-19&&z>ANNEX_Z0-1.5&&z<ANNEX_Z1+1.5)continue;
     b.box([2.92,.08,2.92],[x,-.1+(variation(i*7+j*13)-.5)*.01,z],"stone",-1,{lift:0,shade:(i+j)%2?.84:1});
   }
   for(let i=0;i<5;i++)b.box([15-i*.3,.24,.92],[0,.12+i*.24,24.85+(4-i)*.9],"stone",.004+i*.002,{lift:.2,shade:1.06});
@@ -258,7 +255,7 @@ export function courtyard(b:HeritageBuilder){
   for(const sign of[-1,1])for(const y of[.55,1.15])b.box([11.2,.06,.06],[sign*8.5,y,31],"iron",-1,{lift:0});
   for(let x=-13.5;x<=13.5;x+=.5){if(Math.abs(x)<3)continue;b.box([.04,1.05,.04],[x,.6,31],"iron",-1,{lift:0});}
   for(let i=0;i<8;i++)palm(b,17.5,-24+i*6.2,8.5+variation(i)*2,i);
-  for(let i=0;i<4;i++)palm(b,-17.5,-22+i*6.5,8+variation(i+9)*2.5,i+9);
+  for(let i=0;i<8;i++)palm(b,-17.5,-24+i*6.2,8+variation(i+9)*2.5,i+9);
   for(const sign of[-1,1]){b.cylinder(.08,.13,3.6,[sign*9.5,1.8,29.5],"iron",-1,{lift:0});b.sphere([sign*9.5,3.85,29.5],[.26,.34,.26],"glass",-1,{lift:0});}
 }
 
@@ -501,37 +498,12 @@ function tower(b:HeritageBuilder,sign:number){
   b.sphere([cx,top+2.7,cz],[.11,.11,.11],"gold",.82);
   b.cylinder(.012,.025,.6,[cx,top+3.05,cz],"iron",.822,{duration:.01,lift:.4});
 }
-function annex(b:HeritageBuilder){
-  // Lower chapel wing on the left flank: three visible walls, its own gable roof, arched windows.
-  const outer=new Wall([-ANNEX_X,0,ANNEX_Z0],[-ANNEX_X,0,ANNEX_Z1]);
-  const front=new Wall([-ANNEX_X,0,ANNEX_Z1],[-AISLE_X,0,ANNEX_Z1]);
-  const rear=new Wall([-AISLE_X,0,ANNEX_Z0],[-ANNEX_X,0,ANNEX_Z0]);
-  const ridgeX=-(ANNEX_X+AISLE_X)/2,halfSpan=(ANNEX_X-AISLE_X)/2+.5,eaveY=ANNEX_TOP+.72-.15,ridgeY=eaveY+halfSpan*.42;
-  const gable=(w:Wall)=>(y:number):[number,number]|null=>{
-    if(y<ANNEX_TOP)return[0,w.len];
-    const hw=Math.max(0,(halfSpan-.4)*(1-(y-eaveY)/(ridgeY-eaveY)));if(hw<.3)return null;
-    const c=w.len/2;return[c-hw,c+hw];
-  };
-  const zs=[-10,-6,-2,2,6,10];
-  courses(b,outer,{y0:0,y1:PLINTH,course:.4,block:1.3,material:()=>"stone",start:T.mason,shade:.9});
-  courses(b,outer,{y0:PLINTH,y1:ANNEX_TOP,voids:zs.map(z=>arch(z-ANNEX_Z0,1.3,2.8,6.4)),material:()=>"marble",start:T.mason});
-  for(const z of zs)archWindow(b,outer,z-ANNEX_Z0,1.3,2.8,6.4,.30);
-  for(const z of[-12,-8,-4,0,4,8,12])for(let k=0;k<3;k++){const y=PLINTH+1.2+k*2.4;b.box([.6,2.35,.3],outer.at(z-ANNEX_Z0,y,.28),"marble",T.mason(y),{r:outer.rot(),shade:1.03});}
-  for(const w of[front,rear]){
-    courses(b,w,{y0:0,y1:PLINTH,course:.4,block:1.3,material:()=>"stone",start:T.mason,shade:.9});
-    courses(b,w,{y0:PLINTH,y1:ridgeY-.2,extent:gable(w),material:()=>"marble",start:T.mason});
-  }
-  cornice(b,[outer,front,rear],ANNEX_TOP,.25,.8);
-  gableRoof(b,ridgeX,halfSpan,eaveY,ridgeY,ANNEX_Z0-.4,ANNEX_Z1+.4,3,.30,false);
-
-}
 
 export function buildArchitecture(b:HeritageBuilder){
   // Structural floor decks first: nothing above stands on air.
   b.box([2*AISLE_X+.4,1.15,FRONT-REAR+.6],[0,.575,(FRONT+REAR)/2],"stone",.02,{lift:.4,duration:.03,shade:.95});
   b.box([12.6,1.15,4.4],[0,.575,22.2],"stone",.03,{lift:.4,duration:.03,shade:.95});
   b.cylinder(APSE_R-.2,APSE_R-.2,1.15,[0,.575,REAR],"stone",.02,{lift:.4,duration:.03,shade:.95});
-  b.box([ANNEX_X-AISLE_X+.4,1.15,ANNEX_Z1-ANNEX_Z0],[-(ANNEX_X+AISLE_X)/2,.575,(ANNEX_Z0+ANNEX_Z1)/2],"stone",.02,{lift:.4,duration:.03,shade:.95});
   colonnade(b);
   outerWalls(b);
   clerestory(b);
@@ -540,6 +512,5 @@ export function buildArchitecture(b:HeritageBuilder){
   portico(b);
   mainRoof(b);
   transeptRoof(b);
-  annex(b);
   for(const sign of[-1,1])tower(b,sign);
 }
