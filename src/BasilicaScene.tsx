@@ -19,7 +19,7 @@ export default function BasilicaScene({progress,view="overview",onReady}:Props){
     const mount=mountRef.current;if(!mount)return;
     const scene=new THREE.Scene();
     const camera=new THREE.PerspectiveCamera(34,1,.1,260);
-    camera.position.set(52,28,74);
+    camera.position.set(56,30,64);
     const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:"high-performance"});
     renderer.setPixelRatio(Math.min(devicePixelRatio,window.innerWidth<700?1.5:2));
     renderer.setClearColor(0xf4f1e9,0);
@@ -35,22 +35,22 @@ export default function BasilicaScene({progress,view="overview",onReady}:Props){
     scene.add(new THREE.HemisphereLight(0xfaf7ef,0x706a5c,.72));
     // Equatorial afternoon sun from the south-west lights the facade and the right flank.
     const key=new THREE.DirectionalLight(0xfff2e2,2.4);key.position.set(-34,58,46);key.castShadow=true;
-    key.shadow.mapSize.set(4096,4096);key.shadow.camera.left=-36;key.shadow.camera.right=36;
-    key.shadow.camera.top=40;key.shadow.camera.bottom=-38;key.shadow.camera.near=.5;key.shadow.camera.far=170;
+    key.shadow.mapSize.set(4096,4096);key.shadow.camera.left=-40;key.shadow.camera.right=40;
+    key.shadow.camera.top=48;key.shadow.camera.bottom=-46;key.shadow.camera.near=.5;key.shadow.camera.far=170;
     key.target.position.set(0,12,0);key.shadow.normalBias=.025;key.shadow.bias=-.00015;key.shadow.radius=3;
     scene.add(key,key.target);
     const fill=new THREE.DirectionalLight(0xe5eced,.55);fill.position.set(40,22,-20);scene.add(fill);
     const rim=new THREE.DirectionalLight(0xfff4de,.7);rim.position.set(-18,36,-40);scene.add(rim);
     const controls=new OrbitControls(camera,renderer.domElement);
-    controls.target.set(0,11,2);controls.enableDamping=true;controls.dampingFactor=.075;
+    controls.target.set(0,11,-1);controls.enableDamping=true;controls.dampingFactor=.075;
     controls.enablePan=true;controls.minDistance=10;controls.maxDistance=150;
     controls.minPolarAngle=.3;controls.maxPolarAngle=Math.PI*.51;
     const materialKit=createHeritageMaterials(renderer),builder=new HeritageBuilder(materialKit.materials);
     courtyard(builder);buildArchitecture(builder);builder.finish(scene);
     const reducedMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const presets={
-      overview:{position:new THREE.Vector3(52,28,74),target:new THREE.Vector3(0,11,2)},
-      towers:{position:new THREE.Vector3(16.5,31,30.5),target:new THREE.Vector3(8.95,26.5,19.6)},
+      overview:{position:new THREE.Vector3(56,30,64),target:new THREE.Vector3(0,11,-1)},
+      towers:{position:new THREE.Vector3(17,34,31),target:new THREE.Vector3(8.95,29,19.6)},
       portico:{position:new THREE.Vector3(9,9.5,44),target:new THREE.Vector3(0,11,21)},
     };
     let lastView:DetailView="overview",transition=false,raf=0,lastNow=performance.now(),frames=0,elapsed=0;

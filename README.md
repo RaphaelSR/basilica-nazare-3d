@@ -1,6 +1,6 @@
 # Basílica de Nazaré · Construção 3D
 
-Miniatura procedural da Basílica Santuário de Nossa Senhora de Nazaré (Belém, PA) que se constrói sozinha: embasamento de granito, faixas de mármore cinza-esverdeado e branco, colunata interna, alvenaria em fiadas com duas fileiras de janelas, treliças e telhas de barro num único telhado de duas águas, pórtico de granito rosa, frontão dourado, dois campanários com relógios, sinos, templetes redondos de colunas rosa e cúpulas, abside semicircular e a ala baixa com galeria arqueada no flanco esquerdo. Tudo é geometria procedural em Three.js, sem modelos externos e sem chaves de API.
+Miniatura procedural da Basílica Santuário de Nossa Senhora de Nazaré (Belém, PA) que se constrói sozinha: embasamento de granito, faixas de mármore cinza-esverdeado e branco, colunata interna, alvenaria em fiadas, naves laterais baixas com terraços planos e parapeitos, clerestório recuado sob o telhado de barro, transepto de largura total com telhado em cruz, coro e ábside, pórtico de granito rosa, frontão dourado, dois campanários com relógios, sinos, templetes redondos de colunas rosa e cúpulas, e a ala baixa com galeria arqueada no flanco esquerdo. Proporções medidas na vista de satélite (24 m de largura, torres de 42 m). Tudo é geometria procedural em Three.js, sem modelos externos e sem chaves de API.
 
 É uma interpretação estilizada a partir de fotos e do Google Maps 3D, não uma reconstrução métrica.
 
