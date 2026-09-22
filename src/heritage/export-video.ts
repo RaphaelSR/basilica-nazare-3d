@@ -73,7 +73,7 @@ export async function exportVerticalVideo(sourceScene: THREE.Scene, copy: VideoC
       if (object.name === "day-fill") { object.intensity = night ? .2 : .55; object.color.set(night ? 0x829bc5 : 0xe5eced); }
       if (object.name === "day-rim") { object.intensity = night ? .16 : .7; object.color.set(night ? 0x536b9e : 0xfff4de); }
     }
-    if (object instanceof THREE.PointLight && object.name === "night-facade") object.intensity = night ? object.userData.nightIntensity : 0;
+    if (object instanceof THREE.PointLight && object.name === "night-building") object.intensity = night ? object.userData.nightIntensity : 0;
   });
   const captureMaterials: THREE.Material[] = [];
   scene.traverse((object) => {
@@ -95,7 +95,7 @@ export async function exportVerticalVideo(sourceScene: THREE.Scene, copy: VideoC
     if (!(object instanceof THREE.Mesh) || object.name !== "heritage-glass") return;
     const materials = Array.isArray(object.material) ? object.material : [object.material];
     materials.forEach((material) => {
-      if ("emissive" in material) { material.emissive.set(0xffa83f); material.emissiveIntensity = night ? 1.65 : 0; }
+      if ("emissive" in material) { material.emissive.set(0xffa83f); material.emissiveIntensity = night ? 1.65 : 0; material.opacity = night ? .58 : .12; }
     });
   });
   const camera = new THREE.PerspectiveCamera(40, 1, .1, 260);

@@ -51,8 +51,9 @@ export default function BasilicaScene({progress,view="overview",night=false,onRe
       [[-3.8,13.5,25],20,12],[[0,7,25],18,11],[[3.8,13.5,25],20,12],
       [[-7.8,5,24],12,9],[[7.8,5,24],12,9],[[0,17,24],12,10],
     ];
+    for(const side of [-1,1])for(const z of [10,-1,-13])facadeLights.push([[side*12,5.6,z],16,13]);
     const warmLights=facadeLights.map(([position,intensity,distance])=>{
-      const light=new THREE.PointLight(0xffa83f,0,distance,2);light.name="night-facade";light.userData.nightIntensity=intensity;light.position.set(...position);scene.add(light);return{light,intensity};
+      const light=new THREE.PointLight(0xffa83f,0,distance,2);light.name="night-building";light.userData.nightIntensity=intensity;light.position.set(...position);scene.add(light);return{light,intensity};
     });
     const controls=new OrbitControls(camera,renderer.domElement);
     controls.target.set(0,14,0);controls.enableDamping=true;controls.dampingFactor=.075;
@@ -96,6 +97,7 @@ export default function BasilicaScene({progress,view="overview",night=false,onRe
       rim.intensity=THREE.MathUtils.lerp(.7,.16,nightMix);rim.color.copy(new THREE.Color(0xfff4de).lerp(new THREE.Color(0x536b9e),nightMix));
       warmLights.forEach(({light,intensity})=>{light.intensity=intensity*nightMix;});
       glass.emissive.set(0xffa83f);glass.emissiveIntensity=nightMix*1.65;
+      glass.opacity=THREE.MathUtils.lerp(.12,.58,nightMix);
       scene.environmentIntensity=THREE.MathUtils.lerp(.32,.13,nightMix);
       renderer.toneMappingExposure=THREE.MathUtils.lerp(1,.72,nightMix);
       builder.progress.value=progressRef.current;
