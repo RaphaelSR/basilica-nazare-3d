@@ -379,6 +379,28 @@ export function courtyard(b:HeritageBuilder){
   for(let x=-14;x<=14;x+=2){if(Math.abs(x)<3)continue;b.box([.18,1.3,.18],[x,.65,31],"iron",-1,{lift:0});b.sphere([x,1.36,31],[.11,.11,.11],"iron",-1,{lift:0});}
   for(const sign of[-1,1])for(const y of[.55,1.15])b.box([11.2,.06,.06],[sign*8.5,y,31],"iron",-1,{lift:0});
   for(let x=-13.5;x<=13.5;x+=.5){if(Math.abs(x)<3)continue;b.box([.04,1.05,.04],[x,.6,31],"iron",-1,{lift:0});}
+  const ribbonColors=["#e63946","#f4c430","#159b70","#2389c9","#8b5cc7","#f17c35","#f4e9d2","#e85d9e"];
+  for(let i=0;i<148;i++){
+    const x=-14.35+i*.195;
+    if(Math.abs(x)<3.05)continue;
+    const seed=(i*73+19)%101/101;
+    const length=.46+seed*.82,width=.035+((i*29)%7)*.007;
+    const sway=Math.sin(i*2.17)*(.035+seed*.055),flutter=Math.sin(i*1.31)*.12;
+    const top=1.05+(i%5)*.018,bottom=Math.max(.08,top-length);
+    const geometry=new THREE.BufferGeometry();
+    const positions=new Float32Array([
+      x-width/2,top,30.91,
+      x+width/2,top,30.91,
+      x-width/2+sway+flutter,bottom+length*.28,30.84,
+      x+width/2+sway+flutter,bottom+length*.28,30.84,
+      x-width/2+sway,bottom,30.9,
+      x+width/2+sway,bottom,30.9,
+    ]);
+    geometry.setAttribute("position",new THREE.BufferAttribute(positions,3));
+    geometry.setIndex([0,1,2,1,3,2,2,3,4,3,5,4]);geometry.computeVertexNormals();
+    const color=new THREE.Color(ribbonColors[i%ribbonColors.length]);
+    b.add(geometry,"ribbon",-1,{lift:0,tint:[color.r,color.g,color.b],shade:.96});geometry.dispose();
+  }
   for(let i=0;i<8;i++)palm(b,17.5,-24+i*6.2,8.5+variation(i)*2,i);
   for(let i=0;i<8;i++)palm(b,-17.5,-24+i*6.2,8+variation(i+9)*2.5,i+9);
   for(const sign of[-1,1]){

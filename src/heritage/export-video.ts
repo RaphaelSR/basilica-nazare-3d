@@ -40,7 +40,7 @@ export type VideoCopy = {
   stages: readonly string[];
 };
 
-export async function exportVerticalVideo(sourceScene: THREE.Scene, copy: VideoCopy, onProgress: (progress: number) => void) {
+export async function exportVerticalVideo(sourceScene: THREE.Scene, copy: VideoCopy, onProgress: (progress: number) => void, night = false) {
   const format = new Mp4OutputFormat();
   const codecs = format.getSupportedCodecs().filter((codec) => codec !== "aac" && codec !== "mp3") as VideoCodec[];
   const codec = await getFirstEncodableVideoCodec(codecs, { width, height });
@@ -57,14 +57,24 @@ export async function exportVerticalVideo(sourceScene: THREE.Scene, copy: VideoC
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
   renderer.setPixelRatio(1);
   renderer.setSize(frameSize, frameSize, false);
-  renderer.setClearColor(0xf4f1e9, 0);
+  renderer.setClearColor(night ? 0x111722 : 0xf4f1e9, 0);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1;
+  renderer.toneMappingExposure = night ? .72 : 1;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
 
   const scene = sourceScene.clone(true);
+  scene.environmentIntensity = night ? .13 : .32;
+  scene.traverse((object) => {
+    if (object instanceof THREE.HemisphereLight) object.intensity = night ? .24 : .72;
+    if (object instanceof THREE.DirectionalLight) {
+      if (object.name === "day-key") { object.intensity = night ? .42 : 2.4; object.color.set(night ? 0xa8c6f2 : 0xfff2e2); }
+      if (object.name === "day-fill") { object.intensity = night ? .2 : .55; object.color.set(night ? 0x829bc5 : 0xe5eced); }
+      if (object.name === "day-rim") { object.intensity = night ? .16 : .7; object.color.set(night ? 0x536b9e : 0xfff4de); }
+    }
+    if (object instanceof THREE.PointLight && object.name === "night-facade") object.intensity = night ? object.userData.nightIntensity : 0;
+  });
   const captureMaterials: THREE.Material[] = [];
   scene.traverse((object) => {
     if (!(object instanceof THREE.Mesh)) return;
@@ -81,6 +91,13 @@ export async function exportVerticalVideo(sourceScene: THREE.Scene, copy: VideoC
       object.customDepthMaterial = depthCopy as THREE.MeshDepthMaterial;
     }
   });
+  scene.traverse((object) => {
+    if (!(object instanceof THREE.Mesh) || object.name !== "heritage-glass") return;
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    materials.forEach((material) => {
+      if ("emissive" in material) { material.emissive.set(0xffa83f); material.emissiveIntensity = night ? 1.65 : 0; }
+    });
+  });
   const camera = new THREE.PerspectiveCamera(40, 1, .1, 260);
   camera.position.set(65, 45, 82);
   camera.lookAt(0, 17, 0);
@@ -89,7 +106,7 @@ export async function exportVerticalVideo(sourceScene: THREE.Scene, copy: VideoC
   const pmrem = new THREE.PMREMGenerator(renderer);
   const environment = pmrem.fromScene(room, .035);
   scene.environment = environment.texture;
-  scene.environmentIntensity = .32;
+  scene.environmentIntensity = night ? .13 : .32;
   room.dispose();
   pmrem.dispose();
 
@@ -109,17 +126,17 @@ export async function exportVerticalVideo(sourceScene: THREE.Scene, copy: VideoC
       buildProgress.value = progress;
       renderer.render(scene, camera);
 
-      context.fillStyle = "#f4f1e9";
+      context.fillStyle = night ? "#111722" : "#f4f1e9";
       context.fillRect(0, 0, width, height);
-      context.fillStyle = "#924c3a";
+      context.fillStyle = night ? "#e5b45f" : "#924c3a";
       context.font = "500 28px Arial, sans-serif";
       context.letterSpacing = "5px";
       context.fillText(copy.brand.toLocaleUpperCase(), 78, 108);
-      context.fillStyle = "#423e33";
+      context.fillStyle = night ? "#eee3cc" : "#423e33";
       context.font = "400 66px Georgia, serif";
       context.letterSpacing = "0px";
       context.fillText(copy.title, 78, 222, width - 156);
-      context.fillStyle = "#898171";
+      context.fillStyle = night ? "#a7afbf" : "#898171";
       context.font = "400 30px Georgia, serif";
       context.fillText(copy.subtitle, 80, 274, width - 160);
 
@@ -127,27 +144,27 @@ export async function exportVerticalVideo(sourceScene: THREE.Scene, copy: VideoC
 
       const stageIndex = stageEnds.findIndex((end) => progress < end);
       const stage = copy.stages[stageIndex === -1 ? copy.stages.length - 1 : stageIndex];
-      context.fillStyle = "#423e33";
+      context.fillStyle = night ? "#eee3cc" : "#423e33";
       context.font = "500 25px Arial, sans-serif";
       context.letterSpacing = "2px";
       context.fillText(stage.toLocaleUpperCase(), 80, 1535, width - 160);
-      context.fillStyle = "rgba(66,62,51,.15)";
+      context.fillStyle = night ? "rgba(231,220,195,.2)" : "rgba(66,62,51,.15)";
       context.fillRect(80, 1590, width - 160, 4);
-      context.fillStyle = "#924c3a";
+      context.fillStyle = night ? "#e5b45f" : "#924c3a";
       context.fillRect(80, 1590, (width - 160) * progress, 4);
-      context.fillStyle = "#898171";
+      context.fillStyle = night ? "#a7afbf" : "#898171";
       context.font = "500 24px Arial, sans-serif";
       context.letterSpacing = "3px";
       context.fillText("BELÉM · PARÁ", 80, 1690);
       context.textAlign = "right";
       context.fillText("BASÍLICA DE NAZARÉ", width - 80, 1690);
       context.textAlign = "left";
-      context.strokeStyle = "rgba(76,65,43,.16)";
+      context.strokeStyle = night ? "rgba(231,220,195,.2)" : "rgba(76,65,43,.16)";
       context.beginPath();
       context.moveTo(80, 1740);
       context.lineTo(width - 80, 1740);
       context.stroke();
-      context.fillStyle = "#898171";
+      context.fillStyle = night ? "#a7afbf" : "#898171";
       context.font = "400 23px Georgia, serif";
       context.letterSpacing = "0px";
       context.fillText(copy.subtitle.toLocaleUpperCase(), 80, 1800, width - 160);

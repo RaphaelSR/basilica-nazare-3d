@@ -29,7 +29,7 @@ function daysUntilCirio() {
   return Math.round((event - today) / 86_400_000);
 }
 
-type VideoExporter = (copy: VideoCopy, onProgress: (progress: number) => void) => Promise<Blob>;
+type VideoExporter = (copy: VideoCopy, onProgress: (progress: number) => void, night: boolean) => Promise<Blob>;
 
 export default function App() {
   const [progress, setProgress] = useState(0);
@@ -38,6 +38,7 @@ export default function App() {
   const [view, setView] = useState<DetailView>("overview");
   const [locale, setLocale] = useState<Locale>("pt");
   const [infoOpen, setInfoOpen] = useState(false);
+  const [night, setNight] = useState(false);
   const [recording, setRecording] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [videoError, setVideoError] = useState(false);
@@ -118,7 +119,7 @@ export default function App() {
         stages: t.stages,
       };
       if (!videoExporter.current) throw new Error("Video export is not ready.");
-      const blob = await videoExporter.current(videoCopy, setExportProgress);
+      const blob = await videoExporter.current(videoCopy, setExportProgress, night);
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -138,7 +139,7 @@ export default function App() {
   const stage = t.stages[stageIndex === -1 ? t.stages.length - 1 : stageIndex];
 
   return (
-    <main className="poster">
+    <main className="poster" data-night={night}>
       <header>
         <span className="wordmark"><i>N</i>Nazaré<em>BELÉM · PARÁ</em></span>
         <small>{t.anatomy}</small>
@@ -146,13 +147,17 @@ export default function App() {
           <a className="cirio-countdown" href={cirioUrl} target="_blank" rel="noreferrer" aria-label={t.cirio(cirioDays)}>
             <span className="countdown-label">{t.cirio(cirioDays)}</span>
           </a>
+          <button className={`theme-toggle${night ? " is-night" : ""}`} type="button" aria-label={t.dayNight(night)} aria-pressed={night} title={t.dayNight(night)} onClick={() => setNight((value) => !value)}>
+            <svg className="theme-icon sun-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.6"/><path d="M12 1.8v2.1M12 20.1v2.1M4.79 4.79l1.48 1.48m11.46 11.46 1.48 1.48M1.8 12h2.1m16.2 0h2.1M4.79 19.21l1.48-1.48M17.73 6.27l1.48-1.48"/></svg>
+            <svg className="theme-icon moon-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.2A8.6 8.6 0 0 1 8.8 3.8 8.8 8.8 0 1 0 20.2 15.2Z"/><path className="moon-star" d="m17.4 3 .35 1.05L18.8 4.4l-1.05.35L17.4 5.8l-.35-1.05L16 4.4l1.05-.35L17.4 3Z"/></svg>
+          </button>
           <nav className="language-selector" aria-label="Idioma / Language">
             {locales.map(({ id, label }) => (
               <button key={id} aria-pressed={locale === id} onClick={() => setLocale(id)}>{label}</button>
             ))}
           </nav>
           <button className="info-button" aria-label={t.info} title={t.info} onClick={() => setInfoOpen(true)}>i</button>
-          <button disabled={!ready} onClick={replay}>{t.rebuild}</button>
+          <button className="rebuild-button" aria-label={t.rebuild} disabled={!ready} onClick={replay}><span className="rebuild-label">{t.rebuild}</span><span className="rebuild-icon" aria-hidden="true">↺</span></button>
         </div>
       </header>
 
@@ -166,7 +171,7 @@ export default function App() {
         </aside>
 
         <div className="tower-stage">
-          <BasilicaScene progress={progress} view={view} onReady={onReady} label={t.scene} onVideoExportReady={onVideoExportReady} />
+          <BasilicaScene progress={progress} view={view} night={night} onReady={onReady} label={t.scene} onVideoExportReady={onVideoExportReady} />
           {!ready && <div className="scene-loading">{t.loading}</div>}
           <div className="stage-label"><i />{stage}<span>{Math.round(progress * 100)}%</span></div>
           <div className="view-selector" role="group" aria-label={t.viewpoint}>
