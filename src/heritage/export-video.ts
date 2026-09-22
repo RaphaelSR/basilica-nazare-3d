@@ -92,10 +92,13 @@ export async function exportVerticalVideo(sourceScene: THREE.Scene, copy: VideoC
     }
   });
   scene.traverse((object) => {
-    if (!(object instanceof THREE.Mesh) || object.name !== "heritage-glass") return;
+    if (!(object instanceof THREE.Mesh) || !["heritage-glass","heritage-stainedGlass"].includes(object.name)) return;
     const materials = Array.isArray(object.material) ? object.material : [object.material];
     materials.forEach((material) => {
-      if ("emissive" in material) { material.emissive.set(0xffa83f); material.emissiveIntensity = night ? 1.65 : 0; material.opacity = night ? .58 : .12; }
+      if ("emissive" in material) {
+        if(object.name === "heritage-glass") { material.emissive.set(0xffa83f); material.emissiveIntensity = night ? 1.65 : 0; material.opacity = night ? .58 : .12; }
+        else material.emissiveIntensity = night ? .75 : 0;
+      }
     });
   });
   const camera = new THREE.PerspectiveCamera(40, 1, .1, 260);

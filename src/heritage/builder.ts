@@ -37,7 +37,7 @@ export class HeritageBuilder {
         const nx=Math.abs(normal.getX(i)),ny=Math.abs(normal.getY(i)),nz=Math.abs(normal.getZ(i));
         uv.setXY(i,(nx>nz?pos.getZ(i):pos.getX(i))/5.5,(ny>.8?pos.getZ(i):pos.getY(i))/5.5);
       }
-    }else if(uv && material!=="glass"){
+    }else if(uv && material!=="glass" && material!=="stainedGlass"){
       const offset=(Math.sin(this.pieces*127.1)*43758.5453)%1;
       for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)+offset,uv.getY(i)+offset*.731);
     }

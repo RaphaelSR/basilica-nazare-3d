@@ -117,24 +117,30 @@ function archRing(b:HeritageBuilder,w:Wall,s:number,cy:number,rIn:number,rOut:nu
     b.add(g,material,start+i*.0015,{p:w.at(s,cy,out),r:w.rot(),shade:shade+(i%3)*.02});g.dispose();
   }
 }
-function archWindow(b:HeritageBuilder,w:Wall,s:number,width:number,yb:number,yt:number,start:number){
+function archWindow(b:HeritageBuilder,w:Wall,s:number,width:number,yb:number,yt:number,start:number,stained=false){
   const r=width/2,cy=yt-r;
   b.box([width+.1,yt-yb+.1,.08],w.at(s,(yb+yt)/2,-.14),"recess",start,{r:w.rot()});
-  b.box([width,yt-yb,.02],w.at(s,(yb+yt)/2,-.02),"glass",start+.004,{r:w.rot(),lift:.1});
+  if(stained)stainedPane(b,w,s,width,yb,yt,start);
+  else b.box([width,yt-yb,.02],w.at(s,(yb+yt)/2,-.02),"glass",start+.004,{r:w.rot(),lift:.1});
   b.box([.05,yt-yb-.05,.05],w.at(s,(yb+yt)/2,-.02),"iron",start+.004,{r:w.rot()});
   for(let k=1;k<=2;k++)b.box([width-.05,.05,.05],w.at(s,yb+(cy-yb)*k/3,-.02),"iron",start+.004,{r:w.rot()});
   for(const dx of[-1,1])b.box([.24,cy-yb,.76],w.at(s+dx*(r+.11),(yb+cy)/2,.04),"marble",start,{r:w.rot(),shade:.93});
   b.box([width+.6,.2,.9],w.at(s,yb-.1,.08),"marble",start,{r:w.rot(),shade:.96});
   archRing(b,w,s,cy,r+.01,r+.25,.76,.04,"marble",start+.008);
 }
-function rectWindow(b:HeritageBuilder,w:Wall,s:number,width:number,yb:number,yt:number,start:number){
+function rectWindow(b:HeritageBuilder,w:Wall,s:number,width:number,yb:number,yt:number,start:number,stained=false){
   b.box([width+.1,yt-yb+.1,.08],w.at(s,(yb+yt)/2,-.14),"recess",start,{r:w.rot()});
-  b.box([width,yt-yb,.02],w.at(s,(yb+yt)/2,-.02),"glass",start+.004,{r:w.rot(),lift:.1});
+  if(stained)stainedPane(b,w,s,width,yb,yt,start);
+  else b.box([width,yt-yb,.02],w.at(s,(yb+yt)/2,-.02),"glass",start+.004,{r:w.rot(),lift:.1});
   b.box([.05,yt-yb,.05],w.at(s,(yb+yt)/2,-.02),"iron",start+.004,{r:w.rot()});
   b.box([width-.05,.05,.05],w.at(s,(yb+yt)/2,-.02),"iron",start+.004,{r:w.rot()});
   for(const dx of[-1,1])b.box([.2,yt-yb+.3,.72],w.at(s+dx*(width/2+.1),(yb+yt)/2,.04),"marble",start,{r:w.rot(),shade:.93});
   b.box([width+.7,.24,.8],w.at(s,yt+.22,.06),"marble",start+.004,{r:w.rot(),shade:.95});
   b.box([width+.6,.18,.9],w.at(s,yb-.09,.08),"marble",start,{r:w.rot(),shade:.96});
+}
+function stainedPane(b:HeritageBuilder,w:Wall,s:number,width:number,yb:number,yt:number,start:number){
+  const pane=b.geo("stained-pane",()=>new THREE.PlaneGeometry(1,1));
+  b.add(pane,"stainedGlass",start+.004,{p:w.at(s,(yb+yt)/2,-.02),r:w.rot(),s:[width,yt-yb,1],lift:.1});
 }
 function door(b:HeritageBuilder,w:Wall,s:number,width:number,yb:number,yt:number,start:number){
   const r=width/2,cy=yt-r,h=cy-yb;
@@ -212,7 +218,7 @@ function latticeParapet(b:HeritageBuilder,w:Wall,y:number,start:number){
     for(const direction of[-1,1])b.box([diagonal,.055,.08],center,"marble",start+.006,{r:w.rot(direction*tilt),shade:.98});
   }
 }
-function angel(b:HeritageBuilder,p:Point,yaw:number,start:number,scale=1,wings=true){
+function angel(b:HeritageBuilder,p:Point,yaw:number,start:number,scale=1,wings=true,trumpet: -1|0|1=0){
   const P=(x:number,y:number,z:number):Point=>{const q=facePoint(x*scale,y*scale,z*scale,yaw);return[p[0]+q[0],p[1]+q[1],p[2]+q[2]];};
   const pose={p,r:[0,yaw,0] as Point,s:[scale,scale,scale] as Point,lift:.18};
   b.box([.7*scale,.28*scale,.64*scale],P(0,.14,0),"marble",start,{shade:.94,r:[0,yaw,0],lift:.18});
@@ -228,8 +234,9 @@ function angel(b:HeritageBuilder,p:Point,yaw:number,start:number,scale=1,wings=t
   b.sphere(P(0,1.66,-.025),[.125*scale,.1*scale,.105*scale],"marble",start+.01,{r:[0,yaw,0],shade:.88,lift:.18});
   b.sphere(P(0,1.585,.116),[.025*scale,.034*scale,.033*scale],"marble",start+.01,{r:[0,yaw,0],lift:.18});
   for(const sign of[-1,1]){
-    b.tube([P(sign*.16,1.32,0),P(sign*.27,1.15,.1),P(sign*.07,1.23,.22)],.064*scale,"marble",start+.011,{lift:.18},5);
-    b.sphere(P(sign*.056,1.24,.22),[.046*scale,.07*scale,.043*scale],"marble",start+.012,{r:[0,yaw,sign*.25],lift:.18});
+    const hand=trumpet&&sign===trumpet?P(sign*.39,1.87,.23):P(sign*.07,1.23,.22);
+    b.tube([P(sign*.16,1.32,0),P(sign*.3,trumpet&&sign===trumpet?1.55:1.15,.12),hand],.064*scale,"marble",start+.011,{lift:.18},7);
+    b.sphere(hand,[.046*scale,.07*scale,.043*scale],"marble",start+.012,{r:[0,yaw,sign*.25],lift:.18});
     b.sphere(P(sign*.13,.38,.14),[.07*scale,.045*scale,.13*scale],"marble",start+.005,{r:[0,yaw,0],lift:.18});
     if(!wings)continue;
     const wing=b.geo(`sculpture-wing:${sign}`,()=>{
@@ -241,6 +248,14 @@ function angel(b:HeritageBuilder,p:Point,yaw:number,start:number,scale=1,wings=t
     });
     b.add(wing,"marble",start+.013,{...pose,shade:1.04});
     for(let i=0;i<5;i++)b.tube([P(sign*.2,1.21,-.058),P(sign*(.31+i*.035),1.34+i*.056,-.047),P(sign*(.36+i*.057),1.35+i*.116,-.066)],.017*scale,"marble",start+.014,{shade:.86,lift:.18},4);
+  }
+  if(trumpet){
+    const mouth=P(trumpet*.07,1.59,.14),neck=P(trumpet*.53,2.02,.24),bell=P(trumpet*.85,2.27,.27);
+    b.tube([mouth,P(trumpet*.27,1.78,.19),neck],.027*scale,"marble",start+.015,{lift:.18},12);
+    const direction=new THREE.Vector3(...bell).sub(new THREE.Vector3(...neck));
+    const rotation=new THREE.Euler().setFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),direction.clone().normalize()));
+    const flare=b.geo("angel-trumpet-bell",()=>new THREE.CylinderGeometry(.13,.03,.42,12));
+    b.add(flare,"marble",start+.017,{p:[(neck[0]+bell[0])/2,(neck[1]+bell[1])/2,(neck[2]+bell[2])/2],r:[rotation.x,rotation.y,rotation.z],s:[scale,scale,scale],lift:.18});
   }
 }
 
@@ -480,9 +495,9 @@ function outerWalls(b:HeritageBuilder){
     const voids=[...zs.map(z=>rect(sOf(z),1.4,3.2,7.4)),rect(sOf(tMid),1.4,3.2,7.4),arch(sOf(tMid),1.6,11.9,15.4),arch(sOf(annexZ),1.1,3.6,7.4)];
     courses(b,w,{y0:0,y1:PLINTH,course:.4,block:1.3,material:()=>"stone",start:T.mason,shade:.9});
     courses(b,w,{y0:PLINTH,y1:transeptRidge-.25,voids,extent,material:()=>"marble",start:T.mason});
-    for(const z of[...zs,tMid])rectWindow(b,w,sOf(z),1.4,3.2,7.4,.30);
-    archWindow(b,w,sOf(tMid),1.6,11.9,15.4,.42);
-    archWindow(b,w,sOf(annexZ),1.1,3.6,7.4,.30);
+    for(const z of[...zs,tMid])rectWindow(b,w,sOf(z),1.4,3.2,7.4,.30,true);
+    archWindow(b,w,sOf(tMid),1.6,11.9,15.4,.42,true);
+    archWindow(b,w,sOf(annexZ),1.1,3.6,7.4,.30,true);
     for(const z of bays(16,TRANSEPT_Z0+2.4))for(let k=0;k<4;k++){const y=PLINTH+1.05+k*2.1;b.box([.7,2.05,.32],w.at(sOf(z),y,.3),"marble",T.mason(y),{r:w.rot(),shade:1.03});}
     for(const z of[TRANSEPT_Z0,TRANSEPT_Z1,REAR])for(let k=0;k<(z===REAR?4:7);k++){const y=PLINTH+1.06+k*2.11;b.box([.75,2.06,.75],[sign*AISLE_X,y,z],"marble",T.mason(y),{shade:1.03});}
     const aisleEdge=sign>0?new Wall([AISLE_X,0,16.8],[AISLE_X,0,TRANSEPT_Z0]):new Wall([-AISLE_X,0,TRANSEPT_Z0],[-AISLE_X,0,16.8]);
@@ -516,7 +531,7 @@ function clerestory(b:HeritageBuilder){
       const w=sign>0?new Wall([CLER_X,0,z0],[CLER_X,0,z1]):new Wall([-CLER_X,0,z1],[-CLER_X,0,z0]);
       const sOf=(z:number)=>sign>0?z0-z:z-z1;
       courses(b,w,{y0:AISLE_TOP,y1:WALL_TOP,voids:ws.map(z=>arch(sOf(z),1.6,11.9,15.4)),material:()=>"marble",start:T.mason});
-      for(const z of ws)archWindow(b,w,sOf(z),1.6,11.9,15.4,.42);
+      for(const z of ws)archWindow(b,w,sOf(z),1.6,11.9,15.4,.42,true);
       if(ws.length>1)for(const z of bays(16,TRANSEPT_Z0+2.4))for(let k=0;k<2;k++){const y=AISLE_TOP+.72+1.4+k*2.5;b.box([.6,2.45,.3],w.at(sOf(z),y,.3),"marble",T.mason(y),{r:w.rot(),shade:1.03});}
       cornice(b,[w],WALL_TOP,.385);
     }
@@ -656,7 +671,7 @@ function facade(b:HeritageBuilder){
   for(const x of[-3.75,3.75])archWindow(b,w,FRONT_S(x),1.1,11.6,14.3,.45);
   angel(b,[0,10.94,20.85],0,.9,1.42,false);
   for(const [x,wd,yt]of doors)door(b,w,FRONT_S(x),wd,PLINTH,yt,.66);
-  for(const x of[-5.9,5.9])angel(b,w.at(FRONT_S(x),PED_BASE,.3),0,.94,1.05);
+  for(const x of[-4,4])angel(b,[x,PED_BASE+1.14,FRONT+1.02],0,.94,1.05,true,x<0?-1:1);
   cross(b,[0,PED_APEX+.1,FRONT+.35],1.4,.975);
 }
 function portico(b:HeritageBuilder){

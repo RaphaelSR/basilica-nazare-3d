@@ -61,6 +61,7 @@ export default function BasilicaScene({progress,view="overview",night=false,onRe
     controls.minPolarAngle=.3;controls.maxPolarAngle=Math.PI*.51;
     const materialKit=createHeritageMaterials(renderer),builder=new HeritageBuilder(materialKit.materials);
     const glass=materialKit.materials.glass;
+    const stainedGlass=materialKit.materials.stainedGlass;
     courtyard(builder);buildArchitecture(builder);builder.finish(scene);
     const reducedMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const presets={
@@ -98,6 +99,7 @@ export default function BasilicaScene({progress,view="overview",night=false,onRe
       warmLights.forEach(({light,intensity})=>{light.intensity=intensity*nightMix;});
       glass.emissive.set(0xffa83f);glass.emissiveIntensity=nightMix*1.65;
       glass.opacity=THREE.MathUtils.lerp(.12,.58,nightMix);
+      stainedGlass.emissiveIntensity=nightMix*.75;
       scene.environmentIntensity=THREE.MathUtils.lerp(.32,.13,nightMix);
       renderer.toneMappingExposure=THREE.MathUtils.lerp(1,.72,nightMix);
       builder.progress.value=progressRef.current;
