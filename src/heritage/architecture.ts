@@ -7,7 +7,7 @@ import type { SurfaceName } from "./materials";
 // the tiled gable roof, a full-width transept with a cross gable, a short chancel and apse,
 // twin bell towers crowned by round colonnaded tempietti and domes, a pink-granite
 // portico, a gilded pediment, a semicircular apse, and the lower chapel wing with
-// its arcaded gallery on the left flank. Scene units (≈1.1 m); about 37 units tall.
+// on the left flank. Scene units (≈1.1 m); about 37 units tall.
 
 const TAU=Math.PI*2;
 const variation=(n:number)=>{const v=Math.sin(n*127.1+31.7)*43758.5453;return v-Math.floor(v);};
@@ -33,7 +33,7 @@ const AISLE_X=11, CLER_X=5.2, FRONT=20, TRANSEPT_Z0=-12.4, TRANSEPT_Z1=-20.4, RE
 const EAVE_X=5.8, EAVE_Y=17.05, RIDGE=EAVE_Y+EAVE_X*.42;
 const TOWER_X=8.95, TOWER_Z=19.6, TOWER_HW=2.8, SHAFT_TOP=22.5, BELL_BASE=23.3, BELL_TOP=27.4, DRUM_BASE=28.15;
 const TEMPIETTO_H=2.6, DOME_BASE=DRUM_BASE+.3+TEMPIETTO_H+.65;
-const ANNEX_X=16.5, ANNEX_TOP=8.4, ANNEX_Z0=2.5, ANNEX_Z1=15.5, GALLERY_TOP=5.2, GALLERY_X=17, GALLERY_Z=22;
+const ANNEX_X=16.5, ANNEX_TOP=8.4, ANNEX_Z0=2.5, ANNEX_Z1=15.5;
 const FRONT_S=(x:number)=>x+6.15;
 const gableHalfWidth=(y:number)=>y<EAVE_Y?CLER_X:Math.min(CLER_X,EAVE_X*(1-(y-EAVE_Y)/(RIDGE-EAVE_Y))-.2);
 const pedimentHalfWidth=(y:number)=>6.15*(1-(y-PED_BASE)/(PED_APEX-PED_BASE));
@@ -250,7 +250,7 @@ export function courtyard(b:HeritageBuilder){
   for(let i=-11;i<=11;i++)for(let j=-16;j<=13;j++){
     const x=i*3,z=j*3;
     if(Math.abs(x)<12.5&&z>-29&&z<24.5)continue;
-    if(x<-10&&x>-19&&z>0&&z<24.5)continue;
+    if(x<-10&&x>-19&&z>ANNEX_Z0-1.5&&z<ANNEX_Z1+1.5)continue;
     b.box([2.92,.08,2.92],[x,-.1+(variation(i*7+j*13)-.5)*.01,z],"stone",-1,{lift:0,shade:(i+j)%2?.84:1});
   }
   for(let i=0;i<5;i++)b.box([15-i*.3,.24,.92],[0,.12+i*.24,24.85+(4-i)*.9],"stone",.004+i*.002,{lift:.2,shade:1.06});
@@ -523,19 +523,7 @@ function annex(b:HeritageBuilder){
   }
   cornice(b,[outer,front,rear],ANNEX_TOP,.25,.8);
   gableRoof(b,ridgeX,halfSpan,eaveY,ridgeY,ANNEX_Z0-.4,ANNEX_Z1+.4,3,.30,false);
-  // Arcaded gallery in front of the wing, flat roof with a parapet.
-  const gFront=new Wall([-GALLERY_X,0,GALLERY_Z],[-AISLE_X-.75,0,GALLERY_Z]);
-  const gOuter=new Wall([-GALLERY_X,0,ANNEX_Z1],[-GALLERY_X,0,GALLERY_Z]);
-  const arcades:[Wall,number[]][]=[[gFront,[1.3,3.7]],[gOuter,[1.6,3.9,6.2,8.4]]];
-  for(const [w,ss]of arcades){
-    courses(b,w,{y0:0,y1:PLINTH,course:.4,block:1.3,material:()=>"stone",start:T.mason,shade:.9});
-    courses(b,w,{y0:PLINTH,y1:GALLERY_TOP,block:.8,voids:ss.map(s=>arch(s,1.4,PLINTH,4.6)),material:()=>"marble",start:T.mason});
-    for(const s of ss)archRing(b,w,s,4.6-.7,.71,.92,.7,.04,"marble",.19);
-  }
-  b.box([GALLERY_X-AISLE_X+.3,.45,GALLERY_Z-ANNEX_Z1+.3],[-(GALLERY_X+AISLE_X)/2+.1,GALLERY_TOP+.225,(GALLERY_Z+ANNEX_Z1)/2],"marble",.21,{duration:.02,lift:.8,shade:.98});
-  cornice(b,[gFront,gOuter],GALLERY_TOP-.05,.20,.7);
-  balustrade(b,new Wall([-GALLERY_X-.2,0,GALLERY_Z+.2],[-AISLE_X-.7,0,GALLERY_Z+.2]),GALLERY_TOP+.45,.23,.8);
-  balustrade(b,new Wall([-GALLERY_X-.2,0,ANNEX_Z1-.2],[-GALLERY_X-.2,0,GALLERY_Z+.2]),GALLERY_TOP+.45,.23,.8);
+
 }
 
 export function buildArchitecture(b:HeritageBuilder){
@@ -544,7 +532,6 @@ export function buildArchitecture(b:HeritageBuilder){
   b.box([12.6,1.15,4.4],[0,.575,22.2],"stone",.03,{lift:.4,duration:.03,shade:.95});
   b.cylinder(APSE_R-.2,APSE_R-.2,1.15,[0,.575,REAR],"stone",.02,{lift:.4,duration:.03,shade:.95});
   b.box([ANNEX_X-AISLE_X+.4,1.15,ANNEX_Z1-ANNEX_Z0],[-(ANNEX_X+AISLE_X)/2,.575,(ANNEX_Z0+ANNEX_Z1)/2],"stone",.02,{lift:.4,duration:.03,shade:.95});
-  b.box([GALLERY_X-AISLE_X,1.15,GALLERY_Z-ANNEX_Z1],[-(GALLERY_X+AISLE_X)/2,.575,(GALLERY_Z+ANNEX_Z1)/2],"stone",.02,{lift:.4,duration:.03,shade:.95});
   colonnade(b);
   outerWalls(b);
   clerestory(b);
